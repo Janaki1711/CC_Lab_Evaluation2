@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from prometheus_client import make_asgi_app, Counter, Histogram
 from app.config import settings
 from app.database import Base, engine
-from app.routes import router as documents_router, cluster_router
+from app.routes import router as documents_router, cluster_router, seed_enterprise_data
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 logger = logging.getLogger("metadata-service")
@@ -13,9 +13,9 @@ logger = logging.getLogger("metadata-service")
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
-    title="Academic Document System - Metadata Service",
-    description="Document metadata persistence and Kubernetes cluster telemetry microservice",
-    version="1.0.0"
+    title="VaultCloud Enterprise - Metadata Service",
+    description="Enterprise document metadata persistence and Kubernetes cluster telemetry microservice",
+    version="2.0.0"
 )
 
 app.add_middleware(
@@ -39,6 +39,14 @@ app.include_router(cluster_router)
 @app.on_event("startup")
 def startup_event():
     logger.info("Metadata Service started on port 8003. Tables verified.")
+    db = SessionLocal()
+    try:
+        seed_enterprise_data(db)
+        logger.info("Enterprise documents seeded successfully.")
+    except Exception as e:
+        logger.warning(f"Could not auto-seed enterprise data: {e}")
+    finally:
+        db.close()
 
 @app.get("/health")
 def health_check():

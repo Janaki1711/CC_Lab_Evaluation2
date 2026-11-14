@@ -121,8 +121,10 @@ def verify_document_access(
     if not doc:
         raise HTTPException(status_code=404, detail="Document not found")
 
-    # Access rule: Teachers and Admins can download everything. Students can download if owner or if doc is public.
-    has_permission = (user_role in ["teacher", "admin"]) or (doc.uploader_id == user_id) or (doc.is_public is True)
+    # Access rule: Auditors, Executives and Admins can access everything across departments.
+    # Engineers/Contributors can access own department documents or public documents.
+    is_privileged = user_role in ["auditor", "executive", "admin", "teacher"]
+    has_permission = is_privileged or (doc.uploader_id == user_id) or (doc.is_public is True) or (doc.department == user_role)
 
     status_str = "success" if has_permission else "unauthorized"
     log = DocumentAccessLog(
@@ -178,6 +180,100 @@ def delete_document(
 def get_all_access_logs(limit: int = 50, db: Session = Depends(get_db)):
     logs = db.query(DocumentAccessLog).order_by(DocumentAccessLog.timestamp.desc()).limit(limit).all()
     return [AccessLogResponse.model_validate(l) for l in logs]
+
+@router.post("/seed-enterprise-data")
+def seed_enterprise_data(db: Session = Depends(get_db)):
+    existing = db.query(Document).count()
+    if existing > 0:
+        return {"status": "already_seeded", "count": existing}
+
+    demo_docs = [
+        {
+            "title": "Master Services Agreement (MSA) - Enterprise Tier",
+            "description": "Standard multi-year service level agreement and data protection addendum",
+            "original_filename": "MSA_Enterprise_AcmeCorp_2026.pdf",
+            "stored_filename": "msa_enterprise_acmecorp_2026.pdf",
+            "storage_bucket": "enterprise-vault-documents",
+            "storage_key": "legal/contracts/msa/msa_enterprise_acmecorp_2026.pdf",
+            "file_size_bytes": 2450000,
+            "mime_type": "application/pdf",
+            "file_extension": "pdf",
+            "uploader_id": "usr-sarah-chen",
+            "uploader_name": "Sarah Chen, Esq.",
+            "department": "Legal & Corporate Compliance",
+            "course_code": "LEGAL-01",
+            "submission_type": "contract",
+            "is_public": False
+        },
+        {
+            "title": "Kubernetes Multi-Cluster Placement Architecture Specification",
+            "description": "Production design for Pod Affinity, Anti-Affinity, and cross-zone node fault tolerance",
+            "original_filename": "K8s_Placement_Architecture_Spec_v3.pdf",
+            "stored_filename": "k8s_placement_architecture_spec_v3.pdf",
+            "storage_bucket": "enterprise-vault-documents",
+            "storage_key": "engineering/blueprints/k8s_placement_architecture_spec_v3.pdf",
+            "file_size_bytes": 5820000,
+            "mime_type": "application/pdf",
+            "file_extension": "pdf",
+            "uploader_id": "usr-alex-kumar",
+            "uploader_name": "Alex Kumar",
+            "department": "Cloud & Infrastructure Engineering",
+            "course_code": "ENG-402",
+            "submission_type": "blueprint",
+            "is_public": True
+        },
+        {
+            "title": "FY2026 Q3 Consolidated Financial Audit & SOC-2 Report",
+            "description": "Audited balance sheet, cash flows, and external compliance control matrix",
+            "original_filename": "FY26_Q3_Financial_Audit_Report.pdf",
+            "stored_filename": "fy26_q3_financial_audit_report.pdf",
+            "storage_bucket": "enterprise-vault-documents",
+            "storage_key": "finance/audits/fy26_q3_financial_audit_report.pdf",
+            "file_size_bytes": 8190000,
+            "mime_type": "application/pdf",
+            "file_extension": "pdf",
+            "uploader_id": "usr-elena-rostova",
+            "uploader_name": "Elena Rostova",
+            "department": "Global Finance & Operations",
+            "course_code": "FIN-201",
+            "submission_type": "financial_report",
+            "is_public": False
+        },
+        {
+            "title": "Global Employee Data Privacy & Cryptographic Handling Policy",
+            "description": "Mandatory GDPR and CCPA operational protocols for company workforce",
+            "original_filename": "Employee_Privacy_Protocol_2026.docx",
+            "stored_filename": "employee_privacy_protocol_2026.docx",
+            "storage_bucket": "enterprise-vault-documents",
+            "storage_key": "hr/policies/employee_privacy_protocol_2026.docx",
+            "file_size_bytes": 1120000,
+            "mime_type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            "file_extension": "docx",
+            "uploader_id": "usr-sarah-chen",
+            "uploader_name": "Sarah Chen, Esq.",
+            "department": "Legal & Corporate Compliance",
+            "course_code": "HR-101",
+            "submission_type": "policy",
+            "is_public": True
+        }
+    ]
+
+    for d in demo_docs:
+        doc = Document(**d)
+        db.add(doc)
+    db.commit()
+
+    # Add audit entries
+    logs = [
+        DocumentAccessLog(user_name="Sarah Chen, Esq.", action="upload", status="success", details="Encrypted & stored MSA_Enterprise_AcmeCorp_2026.pdf (2.45MB) in MinIO vault"),
+        DocumentAccessLog(user_name="Alex Kumar", action="upload", status="success", details="Published K8s_Placement_Architecture_Spec_v3.pdf to Engineering repository"),
+        DocumentAccessLog(user_name="Elena Rostova", action="download", status="success", details="Downloaded financial audit report via high-speed cluster proxy")
+    ]
+    for l in logs:
+        db.add(l)
+    db.commit()
+
+    return {"status": "seeded", "count": len(demo_docs)}
 
 
 # --- Cluster Topology APIs ---

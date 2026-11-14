@@ -7,8 +7,8 @@ class UserRegister(BaseModel):
     email: str = Field(..., min_length=5, max_length=255)
     password: str = Field(..., min_length=6)
     full_name: str = Field(..., min_length=2, max_length=100)
-    role: str = Field(default="student", pattern="^(student|teacher|admin)$")
-    department: Optional[str] = "Computer Science & Engineering"
+    role: str = Field(default="engineer", pattern="^(engineer|auditor|executive|admin|student|teacher)$")
+    department: Optional[str] = "Cloud & Infrastructure Engineering"
 
 class UserLogin(BaseModel):
     username: str

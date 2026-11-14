@@ -113,10 +113,13 @@ def list_users(role: str = None, db: Session = Depends(get_db)):
 def seed_demo_users(db: Session = Depends(get_db)):
     created = []
     demo_accounts = [
-        {"username": "student1", "email": "student1@univ.edu", "password": "password123", "full_name": "Janaki (Student)", "role": "student", "department": "Computer Science & Engineering"},
-        {"username": "student2", "email": "student2@univ.edu", "password": "password123", "full_name": "Aarav Sharma", "role": "student", "department": "Electronics & Communication"},
-        {"username": "teacher1", "email": "teacher1@univ.edu", "password": "password123", "full_name": "Dr. Sarah Mitchell", "role": "teacher", "department": "Computer Science & Engineering"},
-        {"username": "admin1", "email": "admin1@univ.edu", "password": "password123", "full_name": "System Administrator", "role": "admin", "department": "Cloud Computing Lab"}
+        {"username": "alex.kumar", "email": "alex.kumar@vaultcloud.io", "password": "password123", "full_name": "Alex Kumar", "role": "engineer", "department": "Cloud & Infrastructure Engineering"},
+        {"username": "sarah.chen", "email": "sarah.chen@vaultcloud.io", "password": "password123", "full_name": "Sarah Chen, Esq.", "role": "auditor", "department": "Legal & Corporate Compliance"},
+        {"username": "elena.rostova", "email": "elena.rostova@vaultcloud.io", "password": "password123", "full_name": "Elena Rostova", "role": "executive", "department": "Global Finance & Operations"},
+        {"username": "admin", "email": "admin@vaultcloud.io", "password": "password123", "full_name": "Systems Administrator", "role": "admin", "department": "Enterprise Security Operations"},
+        # Backward compatibility for evaluation tests
+        {"username": "student1", "email": "student1@vaultcloud.io", "password": "password123", "full_name": "Alex Kumar (Engineer)", "role": "engineer", "department": "Cloud & Infrastructure Engineering"},
+        {"username": "teacher1", "email": "teacher1@vaultcloud.io", "password": "password123", "full_name": "Sarah Chen (Auditor)", "role": "auditor", "department": "Legal & Corporate Compliance"}
     ]
     for acc in demo_accounts:
         existing = db.query(User).filter(User.username == acc["username"]).first()

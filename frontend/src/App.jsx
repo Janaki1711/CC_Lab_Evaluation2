@@ -1,37 +1,35 @@
 import React, { useState, useEffect } from 'react';
+import Sidebar from './components/Sidebar';
 import Navbar from './components/Navbar';
-import ProblemStatementModal from './components/ProblemStatementModal';
-import LoginModal from './pages/LoginModal';
-import StudentDashboard from './pages/StudentDashboard';
-import TeacherDashboard from './pages/TeacherDashboard';
+import EnterpriseVault from './pages/EnterpriseVault';
+import ComplianceAudit from './pages/ComplianceAudit';
 import ClusterTopology from './pages/ClusterTopology';
 import BenchmarkComparison from './pages/BenchmarkComparison';
+import ProblemStatementModal from './components/ProblemStatementModal';
+import LoginModal from './pages/LoginModal';
 import { authApi } from './services/api';
 
 export default function App() {
-  const [currentTab, setCurrentTab] = useState('student'); // 'student' | 'teacher' | 'topology' | 'benchmarks'
+  const [currentView, setCurrentView] = useState('vault'); // 'vault' | 'audit' | 'topology' | 'benchmarks'
+  const [activeDepartment, setActiveDepartment] = useState('all');
   const [currentUser, setCurrentUser] = useState(null);
   const [isProblemModalOpen, setIsProblemModalOpen] = useState(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [activeStrategy, setActiveStrategy] = useState('strategy-2-affinity');
 
   useEffect(() => {
-    // Initialize user session
     const saved = authApi.getCurrentUser();
     if (saved) {
       setCurrentUser(saved);
-      if (saved.role === 'teacher') {
-        setCurrentTab('teacher');
-      }
     } else {
-      // Default initial mock session as Student Janaki
+      // Default initial enterprise persona: Alex Kumar (Lead Cloud Architect)
       const defaultUser = {
-        id: 'usr-student1-uuid',
-        username: 'student1',
-        email: 'student1@univ.edu',
-        full_name: 'Janaki (Student)',
-        role: 'student',
-        department: 'Computer Science & Engineering',
+        id: 'usr-alex-kumar',
+        username: 'alex.kumar',
+        email: 'alex.kumar@vaultcloud.io',
+        full_name: 'Alex Kumar',
+        role: 'engineer',
+        department: 'Cloud & Infrastructure Engineering',
         created_at: new Date().toISOString()
       };
       setCurrentUser(defaultUser);
@@ -47,70 +45,69 @@ export default function App() {
 
   const handleLoginSuccess = (user) => {
     setCurrentUser(user);
-    if (user.role === 'teacher') {
-      setCurrentTab('teacher');
+    if (user.role === 'auditor') {
+      setCurrentView('vault');
+      setActiveDepartment('Legal & Corporate Compliance');
+    } else if (user.role === 'executive') {
+      setCurrentView('vault');
+      setActiveDepartment('Global Finance & Operations');
     } else {
-      setCurrentTab('student');
+      setCurrentView('vault');
+      setActiveDepartment('Cloud & Infrastructure Engineering');
     }
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-800 flex flex-col font-['Plus_Jakarta_Sans',sans-serif]">
-      {/* Navigation Header */}
-      <Navbar
-        currentTab={currentTab}
-        setCurrentTab={setCurrentTab}
-        currentUser={currentUser}
-        onOpenProblemStatement={() => setIsProblemModalOpen(true)}
-        onOpenLoginModal={() => setIsLoginModalOpen(true)}
-        onLogout={handleLogout}
-        activeStrategy={activeStrategy}
+    <div className="flex h-screen bg-slate-50 text-slate-800 font-['Plus_Jakarta_Sans',sans-serif] overflow-hidden antialiased">
+      
+      {/* SaaS Left Sidebar */}
+      <Sidebar
+        currentView={currentView}
+        setCurrentView={setCurrentView}
+        activeDepartment={activeDepartment}
+        setActiveDepartment={setActiveDepartment}
       />
 
-      {/* Main Content Area */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        {currentTab === 'student' && (
-          <StudentDashboard
-            currentUser={currentUser}
-            onOpenLoginModal={() => setIsLoginModalOpen(true)}
-          />
-        )}
+      {/* Main Content Viewport */}
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+        
+        {/* Top Navbar */}
+        <Navbar
+          currentUser={currentUser}
+          onOpenProblemStatement={() => setIsProblemModalOpen(true)}
+          onOpenLoginModal={() => setIsLoginModalOpen(true)}
+          onLogout={handleLogout}
+          activeStrategy={activeStrategy}
+        />
 
-        {currentTab === 'teacher' && (
-          <TeacherDashboard
-            currentUser={currentUser}
-          />
-        )}
+        {/* Scrollable Workspace Container */}
+        <main className="flex-1 overflow-y-auto p-6 lg:p-8">
+          <div className="max-w-7xl mx-auto">
+            {currentView === 'vault' && (
+              <EnterpriseVault
+                activeDepartment={activeDepartment}
+                currentUser={currentUser}
+                onOpenProblemStatement={() => setIsProblemModalOpen(true)}
+              />
+            )}
 
-        {currentTab === 'topology' && (
-          <ClusterTopology
-            activeStrategy={activeStrategy}
-            setActiveStrategy={setActiveStrategy}
-          />
-        )}
+            {currentView === 'audit' && (
+              <ComplianceAudit />
+            )}
 
-        {currentTab === 'benchmarks' && (
-          <BenchmarkComparison />
-        )}
-      </main>
+            {currentView === 'topology' && (
+              <ClusterTopology
+                activeStrategy={activeStrategy}
+                setActiveStrategy={setActiveStrategy}
+              />
+            )}
 
-      {/* Academic Platform Footer */}
-      <footer className="bg-white border-t border-slate-200 py-5 text-xs text-slate-500">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <span className="font-bold text-slate-700">Cloud Computing Laboratory Evaluation 2</span>
-            <span>•</span>
-            <span>Intelligent Pod Placement & Fault-Tolerant Distributed File Storage</span>
+            {currentView === 'benchmarks' && (
+              <BenchmarkComparison />
+            )}
           </div>
-          <div className="flex items-center gap-4 text-slate-400">
-            <span>Kubernetes v1.36</span>
-            <span>kind 0.33</span>
-            <span>FastAPI</span>
-            <span>MinIO</span>
-            <span>PostgreSQL 16</span>
-          </div>
-        </div>
-      </footer>
+        </main>
+      </div>
 
       {/* Modals */}
       <ProblemStatementModal
