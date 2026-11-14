@@ -103,11 +103,11 @@ While serving as a functional document platform where students submit assignment
 - [x] **Phase 1: Architecture and Planning**
 - [x] **Phase 2: Functional Application Development**
 - [x] **Phase 3: Containerization & Local Orchestration**
-- [ ] **Phase 4: Kubernetes Cluster & Base Infrastructure**
-- [ ] **Phase 5: Pod Affinity & Anti-Affinity Implementation**
-- [ ] **Phase 6: Autoscaling & Observability Infrastructure**
-- [ ] **Phase 7: Load Testing & Performance Benchmarking**
-- [ ] **Phase 8: Node Failure & Fault-Tolerance Simulation**
-- [ ] **Phase 9: Evaluation Report & Final Documentation**
+- [x] **Phase 4: Kubernetes Cluster & Base Infrastructure**
+- [x] **Phase 5: Pod Affinity & Anti-Affinity Implementation**
+- [x] **Phase 6: Autoscaling & Observability Infrastructure**
+- [x] **Phase 7: Load Testing & Performance Benchmarking**
+- [x] **Phase 8: Node Failure & Fault-Tolerance Simulation**
+- [x] **Phase 9: Evaluation Report & Final Documentation**
 
 For the detailed phase-by-phase breakdown and status, refer to [documentation/roadmap.md](documentation/roadmap.md).

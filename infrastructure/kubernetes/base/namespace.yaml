@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: academic-docs
+  labels:
+    app.kubernetes.io/name: academic-cloud-platform
+    environment: evaluation

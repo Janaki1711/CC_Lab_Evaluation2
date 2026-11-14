@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: platform-config
+  namespace: academic-docs
+data:
+  ENVIRONMENT: "production"
+  LOG_LEVEL: "INFO"
+  POSTGRES_HOST: "postgres-service"
+  POSTGRES_PORT: "5432"
+  POSTGRES_DB: "academic_docs_db"
+  MINIO_ENDPOINT: "minio-service:9000"
+  MINIO_BUCKET_NAME: "academic-documents"
+  MINIO_USE_SSL: "false"
+  AUTH_SERVICE_URL: "http://auth-service:8001"
+  FILE_SERVICE_URL: "http://file-service:8002"
+  METADATA_SERVICE_URL: "http://metadata-service:8003"
+  JWT_ALGORITHM: "HS256"
+  ACCESS_TOKEN_EXPIRE_MINUTES: "1440"
