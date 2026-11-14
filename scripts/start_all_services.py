@@ -16,17 +16,17 @@ services = [
     {
         "name": "Auth Service",
         "cwd": os.path.join(ROOT_DIR, "services", "auth-service"),
-        "cmd": [sys.executable, "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8001", "--reload"]
+        "cmd": [sys.executable, "-m", "uvicorn", "app.main:app", "--host", "127.0.0.1", "--port", "8001"]
     },
     {
         "name": "Metadata Service",
         "cwd": os.path.join(ROOT_DIR, "services", "metadata-service"),
-        "cmd": [sys.executable, "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8003", "--reload"]
+        "cmd": [sys.executable, "-m", "uvicorn", "app.main:app", "--host", "127.0.0.1", "--port", "8003"]
     },
     {
         "name": "File Service",
         "cwd": os.path.join(ROOT_DIR, "services", "file-service"),
-        "cmd": [sys.executable, "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8002", "--reload"]
+        "cmd": [sys.executable, "-m", "uvicorn", "app.main:app", "--host", "127.0.0.1", "--port", "8002"]
     }
 ]
 

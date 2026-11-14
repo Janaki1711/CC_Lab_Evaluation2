@@ -1,5 +1,6 @@
 import os
 import io
+import socket
 import logging
 from typing import Generator
 from minio import Minio
@@ -8,6 +9,17 @@ from app.config import settings
 
 logger = logging.getLogger(__name__)
 
+def is_service_reachable(endpoint: str, timeout: float = 0.5) -> bool:
+    try:
+        clean = endpoint.replace("http://", "").replace("https://", "")
+        parts = clean.split(":")
+        host = parts[0]
+        port = int(parts[1]) if len(parts) > 1 else 9000
+        with socket.create_connection((host, port), timeout=timeout):
+            return True
+    except Exception:
+        return False
+
 class StorageManager:
     def __init__(self):
         self.is_minio_connected = False
@@ -15,9 +27,14 @@ class StorageManager:
         self.fallback_dir = os.path.abspath("./local_blob_storage")
         os.makedirs(self.fallback_dir, exist_ok=True)
 
+        clean_endpoint = settings.MINIO_ENDPOINT.replace("http://", "").replace("https://", "")
+
+        # Fast socket probe to avoid 20-second urllib3 retry hanging
+        if not is_service_reachable(clean_endpoint):
+            logger.info(f"MinIO port not reachable at {clean_endpoint}. Operating in high-speed local storage mode at {self.fallback_dir}.")
+            return
+
         try:
-            # Strip scheme if accidentally included
-            clean_endpoint = settings.MINIO_ENDPOINT.replace("http://", "").replace("https://", "")
             self.client = Minio(
                 endpoint=clean_endpoint,
                 access_key=settings.MINIO_ROOT_USER,
@@ -32,7 +49,7 @@ class StorageManager:
                 logger.info(f"Found existing MinIO bucket: {settings.MINIO_BUCKET_NAME}")
             self.is_minio_connected = True
         except Exception as e:
-            logger.warning(f"MinIO connection not active ({e}). Operating in filesystem fallback mode at {self.fallback_dir}.")
+            logger.warning(f"MinIO initialization failed ({e}). Operating in filesystem fallback mode at {self.fallback_dir}.")
 
     def upload_stream(self, object_key: str, data_stream: io.BytesIO, length: int, content_type: str):
         if self.is_minio_connected and self.client:
