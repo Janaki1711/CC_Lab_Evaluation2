@@ -1,0 +1,183 @@
+version: '3.8'
+
+services:
+  # ----------------------------------------------------------------------------
+  # PostgreSQL: Relational store for User Accounts and Document Metadata
+  # ----------------------------------------------------------------------------
+  postgres:
+    image: postgres:16-alpine
+    container_name: academic_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: academic_docs_db
+      POSTGRES_USER: postgres_admin
+      POSTGRES_PASSWORD: academic_secure_password_2026
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres_admin -d academic_docs_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - academic_net
+
+  # ----------------------------------------------------------------------------
+  # MinIO: Distributed S3-Compatible Storage for Raw Document Blobs
+  # ----------------------------------------------------------------------------
+  minio:
+    image: minio/minio:RELEASE.2024-03-30T09-41-56Z
+    container_name: academic_minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minio_admin
+      MINIO_ROOT_PASSWORD: minio_secure_password_2026
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - academic_net
+
+  # ----------------------------------------------------------------------------
+  # MinIO Init: Automated bucket creation for 'academic-documents'
+  # ----------------------------------------------------------------------------
+  minio-init:
+    image: minio/mc:RELEASE.2024-03-30T15-31-52Z
+    container_name: academic_minio_init
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      /usr/bin/mc alias set myminio http://minio:9000 minio_admin minio_secure_password_2026;
+      /usr/bin/mc mb myminio/academic-documents --ignore-existing;
+      /usr/bin/mc anonymous set download myminio/academic-documents;
+      echo 'MinIO bucket academic-documents successfully initialized!';
+      exit 0;
+      "
+    networks:
+      - academic_net
+
+  # ----------------------------------------------------------------------------
+  # Auth Service: JWT Authentication & User Role Management (:8001)
+  # ----------------------------------------------------------------------------
+  auth-service:
+    build:
+      context: ./services/auth-service
+      dockerfile: Dockerfile
+    container_name: academic_auth_service
+    restart: unless-stopped
+    environment:
+      PORT: 8001
+      ENVIRONMENT: development
+      POSTGRES_USER: postgres_admin
+      POSTGRES_PASSWORD: academic_secure_password_2026
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: academic_docs_db
+      DATABASE_URL: postgresql://postgres_admin:academic_secure_password_2026@postgres:5432/academic_docs_db
+      JWT_SECRET_KEY: academic_cloud_jwt_secret_key_evaluation_2026
+      JWT_ALGORITHM: HS256
+    ports:
+      - "8001:8001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - academic_net
+
+  # ----------------------------------------------------------------------------
+  # Metadata Service: Document Record Indexing & Cluster Telemetry (:8003)
+  # ----------------------------------------------------------------------------
+  metadata-service:
+    build:
+      context: ./services/metadata-service
+      dockerfile: Dockerfile
+    container_name: academic_metadata_service
+    restart: unless-stopped
+    environment:
+      PORT: 8003
+      ENVIRONMENT: development
+      POSTGRES_USER: postgres_admin
+      POSTGRES_PASSWORD: academic_secure_password_2026
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: academic_docs_db
+      DATABASE_URL: postgresql://postgres_admin:academic_secure_password_2026@postgres:5432/academic_docs_db
+      JWT_SECRET_KEY: academic_cloud_jwt_secret_key_evaluation_2026
+      JWT_ALGORITHM: HS256
+      CURRENT_STRATEGY: strategy-2-affinity
+    ports:
+      - "8003:8003"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - academic_net
+
+  # ----------------------------------------------------------------------------
+  # File Service: Streaming Uploads/Downloads & MinIO Integration (:8002)
+  # ----------------------------------------------------------------------------
+  file-service:
+    build:
+      context: ./services/file-service
+      dockerfile: Dockerfile
+    container_name: academic_file_service
+    restart: unless-stopped
+    environment:
+      PORT: 8002
+      ENVIRONMENT: development
+      MINIO_ENDPOINT: minio:9000
+      MINIO_ROOT_USER: minio_admin
+      MINIO_ROOT_PASSWORD: minio_secure_password_2026
+      MINIO_BUCKET_NAME: academic-documents
+      MINIO_USE_SSL: "false"
+      METADATA_SERVICE_URL: http://metadata-service:8003
+      AUTH_SERVICE_URL: http://auth-service:8001
+      JWT_SECRET_KEY: academic_cloud_jwt_secret_key_evaluation_2026
+      JWT_ALGORITHM: HS256
+    ports:
+      - "8002:8002"
+    depends_on:
+      minio:
+        condition: service_healthy
+      metadata-service:
+        condition: service_started
+    networks:
+      - academic_net
+
+  # ----------------------------------------------------------------------------
+  # API Gateway: Central NGINX Ingress Proxy (:80)
+  # ----------------------------------------------------------------------------
+  api-gateway:
+    build:
+      context: ./services/api-gateway
+      dockerfile: Dockerfile
+    container_name: academic_api_gateway
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - auth-service
+      - file-service
+      - metadata-service
+    networks:
+      - academic_net
+
+volumes:
+  postgres_data:
+  minio_data:
+
+networks:
+  academic_net:
+    driver: bridge

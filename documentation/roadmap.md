@@ -29,12 +29,13 @@ This checklist tracks progress across all nine phases of the project lifecycle. 
 
 ---
 
-### [ ] Phase 3: Containerization & Local Orchestration
-- [ ] Write optimized multi-stage Dockerfiles for all microservices.
-- [ ] Write Nginx API Gateway configuration (`nginx.conf`) and Dockerfile.
-- [ ] Build root `docker-compose.yml` orchestrating all 6 containers.
-- [ ] Verify inter-service networking, volumes, and health checks under Docker Compose.
-- [ ] Commit and push Phase 3 artifacts.
+### [x] Phase 3: Containerization & Local Orchestration
+- [x] Write optimized multi-stage Dockerfiles for all microservices.
+- [x] Write Nginx API Gateway configuration (`nginx.conf`) and Dockerfile.
+- [x] Build root `docker-compose.yml` orchestrating all 6 containers (PostgreSQL, MinIO, Auth, File, Metadata, Gateway).
+- [x] Write automated smoke test verification script (`scripts/smoke_test.py`).
+- [x] Verify inter-service networking, volumes, and health checks under Docker Compose.
+- [x] Commit and push Phase 3 artifacts.
 
 ---
 
