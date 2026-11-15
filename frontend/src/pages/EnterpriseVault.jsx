@@ -360,6 +360,7 @@ export default function EnterpriseVault({ activeDepartment, currentUser, onOpenP
         onClose={() => setIsUploadOpen(false)}
         onUploadSuccess={fetchDocuments}
         currentUser={currentUser}
+        activeDepartment={activeDepartment}
       />
 
     </div>

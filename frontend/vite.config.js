@@ -7,20 +7,8 @@ export default defineConfig({
     port: 3000,
     host: true,
     proxy: {
-      '/api/auth': {
-        target: 'http://localhost:8001',
-        changeOrigin: true
-      },
-      '/api/files': {
-        target: 'http://localhost:8002',
-        changeOrigin: true
-      },
-      '/api/documents': {
-        target: 'http://localhost:8003',
-        changeOrigin: true
-      },
-      '/api/cluster': {
-        target: 'http://localhost:8003',
+      '/api': {
+        target: 'http://localhost:80',
         changeOrigin: true
       }
     }

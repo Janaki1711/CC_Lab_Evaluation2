@@ -10,9 +10,19 @@ import time
 import requests
 
 GATEWAY_URL = "http://localhost:80"
-AUTH_URL = "http://localhost:8001"
-FILE_URL = "http://localhost:8002"
-META_URL = "http://localhost:8003"
+
+# Auto-detect whether running behind API Gateway (Kubernetes / Docker) or direct local ports
+is_gateway = False
+try:
+    gw_check = requests.get(f"{GATEWAY_URL}/health", timeout=2)
+    if gw_check.status_code == 200:
+        is_gateway = True
+except Exception:
+    pass
+
+AUTH_URL = GATEWAY_URL if is_gateway else "http://localhost:8001"
+FILE_URL = GATEWAY_URL if is_gateway else "http://localhost:8002"
+META_URL = GATEWAY_URL if is_gateway else "http://localhost:8003"
 
 def run_tests():
     print("=" * 70)

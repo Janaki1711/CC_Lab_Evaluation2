@@ -84,6 +84,17 @@ def provision_kind_cluster():
     subprocess.run(cmd)
     input("\nPress Enter to return to main menu...")
 
+def build_docker_images():
+    clear_screen()
+    print_banner()
+    print(">>> [Option 4] Building All Docker Containers & Sideloading into KIND...")
+    print("    Containers: Auth (:8001), File (:8002), Metadata (:8003), Gateway (:80), Frontend (:3000)")
+    print("-" * 80)
+
+    cmd = ["powershell", "-ExecutionPolicy", "Bypass", "-File", os.path.join(ROOT_DIR, "scripts", "build_docker_images.ps1")]
+    subprocess.run(cmd)
+    input("\nPress Enter to return to main menu...")
+
 def deploy_strategy(strategy_name, strategy_num):
     clear_screen()
     print_banner()
@@ -109,7 +120,7 @@ def simulate_failure():
 def run_locust_benchmarks():
     clear_screen()
     print_banner()
-    print(">>> [Option 8] Running Locust Load Testing Benchmark...")
+    print(">>> [Option 9] Running Locust Load Testing Benchmark...")
     print("    Simulates 50, 100, 250, and 500 concurrent users uploading 100KB to 10MB payloads.")
     print("-" * 80)
     print("Opening Locust Web Interface on http://localhost:8089...")
@@ -126,11 +137,22 @@ def run_locust_benchmarks():
         pass
     input("\nPress Enter to return to main menu...")
 
+def run_k6_benchmarks():
+    clear_screen()
+    print_banner()
+    print(">>> [Option 10] Running k6 Benchmark Suite (Upload, Download, Mixed 60/25/10/5)...")
+    print("    Script: load-testing/k6/run-k6-benchmarks.ps1")
+    print("-" * 80)
+    
+    cmd = ["powershell", "-ExecutionPolicy", "Bypass", "-File", os.path.join(ROOT_DIR, "load-testing", "k6", "run-k6-benchmarks.ps1"), "-TestType", "mixed"]
+    subprocess.run(cmd)
+    input("\nPress Enter to return to main menu...")
+
 def show_viva_guide():
     clear_screen()
     print_banner()
     guide_path = os.path.join(ROOT_DIR, "documentation", "viva_defense_guide.md")
-    print(">>> [Option 9] External Examiner Viva Defense Guide\n")
+    print(">>> [Option 11] External Examiner Viva Defense Guide\n")
     if os.path.exists(guide_path):
         with open(guide_path, "r", encoding="utf-8") as f:
             lines = f.readlines()[:40]
@@ -149,15 +171,18 @@ def main_menu():
         print("  [1]  🚀 Launch Full Local Web Platform (FastAPI Services + React UI)")
         print("  [2]  🔍 Check Docker & Kubernetes Prerequisites")
         print("  [3]  🏗️  Provision 4-Node KIND Cluster (1 Control-Plane + 3 Worker Nodes)")
-        print("  [4]  📦 Deploy Strategy 1: Default Scheduling (Baseline Clustered Pods)")
-        print("  [5]  🎯 Deploy Strategy 2: Pod Affinity & Anti-Affinity (Optimal Distribution)")
-        print("  [6]  ⚡ Deploy Strategy 3: Horizontal Pod Autoscaler (HPA Scaling Stress)")
-        print("  [7]  💥 Run Controlled Worker Node Failure Experiment (Measure Failover)")
-        print("  [8]  📊 Run Locust Concurrency Benchmark (50, 100, 250, 500 users)")
-        print("  [9]  🎓 View Examiner Viva Questions & Defense Cheatsheet")
+        print("  [4]  🐳 Build All Docker Containers & Sideload into KIND")
+        print("  [5]  📦 Deploy Config A: Default Scheduling (Baseline Clustered Pods)")
+        print("  [6]  🌐 Deploy Config B: Locality Only (Preferred Pod Affinity)")
+        print("  [7]  🛡️  Deploy Config C: Replica Spread & Autoscaling (Anti-Affinity + HPA)")
+        print("  [8]  ⚡ Deploy Config D: Combined Optimal Strategy (Affinity + Anti-Affinity + HPA)")
+        print("  [9]  💥 Run Controlled Worker Node Failure Experiment (Measure Failover)")
+        print("  [10] 📊 Run Locust Concurrency Benchmark (Web UI at :8089)")
+        print("  [11] 📈 Run k6 Concurrent Benchmark Suite (60% Down / 25% Up / 10% List / 5% Del)")
+        print("  [12] 🎓 View Examiner Viva Questions & Defense Cheatsheet")
         print("  [0]  🚪 Exit Controller")
         print("")
-        choice = input("Enter choice [0-9]: ").strip()
+        choice = input("Enter choice [0-12]: ").strip()
 
         if choice == "1":
             start_local_platform()
@@ -169,16 +194,22 @@ def main_menu():
         elif choice == "3":
             provision_kind_cluster()
         elif choice == "4":
-            deploy_strategy("strategy-1-default", 1)
+            build_docker_images()
         elif choice == "5":
-            deploy_strategy("strategy-2-affinity", 2)
+            deploy_strategy("strategy-1-default", 1)
         elif choice == "6":
-            deploy_strategy("strategy-3-autoscaling", 3)
+            deploy_strategy("strategy-2a-locality", 2)
         elif choice == "7":
-            simulate_failure()
+            deploy_strategy("strategy-2b-spread", 3)
         elif choice == "8":
-            run_locust_benchmarks()
+            deploy_strategy("strategy-4-combined", 4)
         elif choice == "9":
+            simulate_failure()
+        elif choice == "10":
+            run_locust_benchmarks()
+        elif choice == "11":
+            run_k6_benchmarks()
+        elif choice == "12":
             show_viva_guide()
         elif choice == "0":
             print("\nExiting Lab Controller. Good luck with your evaluation!")

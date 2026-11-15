@@ -26,13 +26,15 @@ class StorageManager:
         self.client = None
         self.fallback_dir = os.path.abspath("./local_blob_storage")
         os.makedirs(self.fallback_dir, exist_ok=True)
+        self.connect_minio()
+
+    def connect_minio(self) -> bool:
+        if self.is_minio_connected and self.client:
+            return True
 
         clean_endpoint = settings.MINIO_ENDPOINT.replace("http://", "").replace("https://", "")
-
-        # Fast socket probe to avoid 20-second urllib3 retry hanging
-        if not is_service_reachable(clean_endpoint):
-            logger.info(f"MinIO port not reachable at {clean_endpoint}. Operating in high-speed local storage mode at {self.fallback_dir}.")
-            return
+        if not is_service_reachable(clean_endpoint, timeout=2.0):
+            return False
 
         try:
             self.client = Minio(
@@ -48,10 +50,14 @@ class StorageManager:
             else:
                 logger.info(f"Found existing MinIO bucket: {settings.MINIO_BUCKET_NAME}")
             self.is_minio_connected = True
+            return True
         except Exception as e:
             logger.warning(f"MinIO initialization failed ({e}). Operating in filesystem fallback mode at {self.fallback_dir}.")
+            self.is_minio_connected = False
+            return False
 
     def upload_stream(self, object_key: str, data_stream: io.BytesIO, length: int, content_type: str):
+        self.connect_minio()
         if self.is_minio_connected and self.client:
             data_stream.seek(0)
             self.client.put_object(
@@ -71,25 +77,33 @@ class StorageManager:
             logger.info(f"Saved {length} bytes to fallback storage: {local_path}")
 
     def get_stream(self, object_key: str) -> Generator[bytes, None, None]:
+        self.connect_minio()
         if self.is_minio_connected and self.client:
             response = None
             try:
                 response = self.client.get_object(settings.MINIO_BUCKET_NAME, object_key)
                 for chunk in response.stream(32 * 1024):
                     yield chunk
+                return
+            except Exception as e:
+                logger.warning(f"MinIO get_object failed for {object_key}: {e}. Checking fallback storage.")
             finally:
                 if response:
-                    response.close()
-                    response.release_conn()
-        else:
-            local_path = os.path.join(self.fallback_dir, object_key.replace("/", "_"))
-            if not os.path.exists(local_path):
-                raise FileNotFoundError(f"Blob object not found: {object_key}")
-            with open(local_path, "rb") as f:
-                while chunk := f.read(32 * 1024):
-                    yield chunk
+                    try:
+                        response.close()
+                        response.release_conn()
+                    except Exception:
+                        pass
+
+        local_path = os.path.join(self.fallback_dir, object_key.replace("/", "_"))
+        if not os.path.exists(local_path):
+            raise FileNotFoundError(f"Blob object not found: {object_key}")
+        with open(local_path, "rb") as f:
+            while chunk := f.read(32 * 1024):
+                yield chunk
 
     def remove_object(self, object_key: str):
+        self.connect_minio()
         if self.is_minio_connected and self.client:
             self.client.remove_object(settings.MINIO_BUCKET_NAME, object_key)
         else:

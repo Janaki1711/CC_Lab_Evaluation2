@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import Optional, List, Dict, Any
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 class DocumentCreate(BaseModel):
     title: str = Field(..., min_length=1, max_length=255)
@@ -39,6 +39,11 @@ class DocumentResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
 
+    @field_validator('id', 'uploader_id', mode='before')
+    @classmethod
+    def coerce_ids_to_str(cls, v):
+        return str(v) if v is not None else None
+
     class Config:
         from_attributes = True
 
@@ -61,6 +66,11 @@ class AccessLogResponse(BaseModel):
     ip_address: Optional[str]
     details: Optional[str]
     timestamp: datetime
+
+    @field_validator('id', 'document_id', 'user_id', mode='before')
+    @classmethod
+    def coerce_ids_to_str(cls, v):
+        return str(v) if v is not None else None
 
     class Config:
         from_attributes = True

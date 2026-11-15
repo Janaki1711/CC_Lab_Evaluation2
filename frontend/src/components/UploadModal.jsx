@@ -2,11 +2,14 @@ import React, { useState } from 'react';
 import { X, UploadCloud, FileText, CheckCircle, AlertCircle, Shield, Lock } from 'lucide-react';
 import { documentApi } from '../services/api';
 
-export default function UploadModal({ isOpen, onClose, onUploadSuccess, currentUser }) {
+export default function UploadModal({ isOpen, onClose, onUploadSuccess, currentUser, activeDepartment }) {
   const [file, setFile] = useState(null);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [department, setDepartment] = useState('Legal & Corporate Compliance');
+  const initialDept = (activeDepartment && activeDepartment !== 'all') 
+    ? activeDepartment 
+    : (currentUser?.department || 'Cloud & Infrastructure Engineering');
+  const [department, setDepartment] = useState(initialDept);
   const [submissionType, setSubmissionType] = useState('contract');
   const [isPublic, setIsPublic] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -143,9 +146,10 @@ export default function UploadModal({ isOpen, onClose, onUploadSuccess, currentU
                 onChange={(e) => setDepartment(e.target.value)}
                 className="w-full px-2.5 py-1.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
               >
-                <option value="Legal & Corporate Compliance">Legal & Compliance</option>
                 <option value="Cloud & Infrastructure Engineering">Engineering & Specs</option>
+                <option value="Legal & Corporate Compliance">Legal & Compliance</option>
                 <option value="Global Finance & Operations">Finance & Audits</option>
+                <option value="Computer Science & Engineering">Computer Science & Academic</option>
                 <option value="Human Resources">HR & Protocols</option>
               </select>
             </div>

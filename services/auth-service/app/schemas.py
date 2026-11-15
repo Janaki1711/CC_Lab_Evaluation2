@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import Optional
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 class UserRegister(BaseModel):
     username: str = Field(..., min_length=3, max_length=50)
@@ -22,6 +22,11 @@ class UserResponse(BaseModel):
     role: str
     department: Optional[str]
     created_at: datetime
+
+    @field_validator('id', mode='before')
+    @classmethod
+    def coerce_id_to_str(cls, v):
+        return str(v) if v is not None else None
 
     class Config:
         from_attributes = True

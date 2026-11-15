@@ -45,16 +45,8 @@ export default function App() {
 
   const handleLoginSuccess = (user) => {
     setCurrentUser(user);
-    if (user.role === 'auditor') {
-      setCurrentView('vault');
-      setActiveDepartment('Legal & Corporate Compliance');
-    } else if (user.role === 'executive') {
-      setCurrentView('vault');
-      setActiveDepartment('Global Finance & Operations');
-    } else {
-      setCurrentView('vault');
-      setActiveDepartment('Cloud & Infrastructure Engineering');
-    }
+    setCurrentView('vault');
+    setActiveDepartment('all');
   };
 
   return (

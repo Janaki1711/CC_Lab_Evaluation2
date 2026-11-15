@@ -7,12 +7,21 @@ logger = logging.getLogger(__name__)
 
 db_url = settings.DATABASE_URL
 connect_args = {}
+engine_kwargs = {"pool_pre_ping": True}
 
 if db_url.startswith("sqlite"):
     connect_args = {"check_same_thread": False}
+else:
+    # High-concurrency connection pooling for PostgreSQL (50-100+ parallel users)
+    engine_kwargs.update({
+        "pool_size": 20,
+        "max_overflow": 20,
+        "pool_recycle": 1800,
+        "pool_timeout": 30
+    })
 
 try:
-    engine = create_engine(db_url, connect_args=connect_args, pool_pre_ping=True)
+    engine = create_engine(db_url, connect_args=connect_args, **engine_kwargs)
     with engine.connect() as conn:
         logger.info(f"Connected to primary database: {db_url.split('@')[-1]}")
 except Exception as e:

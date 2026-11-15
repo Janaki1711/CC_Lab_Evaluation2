@@ -152,9 +152,28 @@ spec:
 
 | Metric | Measurement Tool | Significance |
 | :--- | :--- | :--- |
-| **P50 / P95 Request Latency (ms)** | Locust & Prometheus | Evaluates the effect of pod co-location vs. cross-node network hops |
-| **Requests Per Second (RPS)** | Locust | Measures total system throughput under concurrency |
+| **P50 / P95 Request Latency (ms)** | k6 / Locust & Prometheus | Evaluates the effect of pod co-location vs. cross-node network hops |
+| **Requests Per Second (RPS)** | k6 / Locust | Measures total system throughput under concurrency |
 | **Pod Distribution Across Nodes** | `kubectl get pods -o wide` / Dashboard | Verifies anti-affinity spread and affinity co-location |
-| **Failover Downtime (seconds)** | Locust / Custom script | Measures service availability when a worker node is abruptly halted |
+| **Failover Downtime (seconds)** | k6 / Locust / Custom script | Measures service availability when a worker node is abruptly halted |
 | **Available Replicas Post-Crash** | Prometheus `kube_deployment_status_replicas_available` | Quantifies immediate fault isolation |
 | **Node Resource Balance (std dev)** | Prometheus `node_cpu_seconds_total` | Evaluates if pod distribution avoids hot-spotting |
+
+---
+
+## 5. The Four Standard Experimental Configurations (System Design Spec)
+
+As defined in the System Design Document (Section 14), the 4 configurations systematically isolate each scheduling variable:
+
+| Configuration | Pod Affinity (Locality) | Pod Anti-Affinity (Spread) | HPA Scaling | Academic Objective / Hypothesis Tested |
+| :---: | :---: | :---: | :---: | :--- |
+| **Config A** | None | None | Off | **Baseline:** Default `kube-scheduler` heuristic. Demonstrates clustering risk and baseline overlay hop latency. |
+| **Config B** | Preferred (weight: 100) | None | Off | **Study Locality:** Isolates inter-service network latency reduction (File Service <-> Metadata Service) without spread constraints. |
+| **Config C** | None | Preferred (weight: 100) | On (60% CPU) | **Study Replica Distribution & Scaling:** Isolates fault tolerance and HPA dynamic expansion across node topology. |
+| **Config D** | Preferred (weight: 80) | Preferred (weight: 100) | On (60% CPU) | **Final Combined Synergy:** Balances local RPC acceleration with multi-node crash resilience and autoscaling. |
+
+### Manifest Mapping
+- **Config A:** `infrastructure/kubernetes/strategy-1-default/file-service-default.yaml`
+- **Config B:** `infrastructure/kubernetes/strategy-2a-locality/file-service-locality-only.yaml`
+- **Config C:** `infrastructure/kubernetes/strategy-2b-spread/file-service-spread-only.yaml`
+- **Config D:** `infrastructure/kubernetes/strategy-3-autoscaling/file-service-hpa.yaml`

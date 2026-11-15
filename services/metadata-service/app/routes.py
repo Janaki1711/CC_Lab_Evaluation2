@@ -57,6 +57,7 @@ def create_document_internal(payload: DocumentCreate, db: Session = Depends(get_
     return DocumentResponse.model_validate(new_doc)
 
 @router.get("", response_model=List[DocumentResponse])
+@router.get("/", response_model=List[DocumentResponse])
 def list_documents(
     search: Optional[str] = Query(None, description="Search by title or filename"),
     course_code: Optional[str] = None,
@@ -124,7 +125,7 @@ def verify_document_access(
     # Access rule: Auditors, Executives and Admins can access everything across departments.
     # Engineers/Contributors can access own department documents or public documents.
     is_privileged = user_role in ["auditor", "executive", "admin", "teacher"]
-    has_permission = is_privileged or (doc.uploader_id == user_id) or (doc.is_public is True) or (doc.department == user_role)
+    has_permission = is_privileged or (str(doc.uploader_id) == str(user_id)) or (doc.is_public is True) or (doc.department == user_role)
 
     status_str = "success" if has_permission else "unauthorized"
     log = DocumentAccessLog(
@@ -161,7 +162,7 @@ def delete_document(
     if not doc:
         raise HTTPException(status_code=404, detail="Document not found")
 
-    if user_role not in ["teacher", "admin"] and doc.uploader_id != user_id:
+    if user_role not in ["teacher", "admin"] and str(doc.uploader_id) != str(user_id):
         raise HTTPException(status_code=403, detail="Cannot delete document uploaded by another student")
 
     storage_key = doc.storage_key
@@ -286,7 +287,14 @@ def get_cluster_topology():
 @cluster_router.post("/strategy")
 def set_placement_strategy(strategy: str):
     """Allows testing different strategies in live dashboard"""
-    valid = ["strategy-1-default", "strategy-2-affinity", "strategy-3-autoscaling"]
+    valid = [
+        "strategy-1-default",
+        "strategy-2a-locality",
+        "strategy-2-affinity",
+        "strategy-2b-spread",
+        "strategy-3-autoscaling",
+        "strategy-4-combined"
+    ]
     if strategy not in valid:
         raise HTTPException(status_code=400, detail=f"Strategy must be one of {valid}")
     settings.CURRENT_STRATEGY = strategy
