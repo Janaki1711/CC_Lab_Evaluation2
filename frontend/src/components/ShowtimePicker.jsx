@@ -1,125 +1,89 @@
 import React, { useState } from 'react';
-import { Calendar, Clock, MapPin, Sparkles, Zap, Check } from 'lucide-react';
+import { Clock, Zap } from 'lucide-react';
 
 export default function ShowtimePicker({
-  show,
   selectedTime,
-  onSelectTime,
-  onOpenFlashSale
+  onSelectTime
 }) {
   const [selectedDate, setSelectedDate] = useState('TODAY');
 
   const dates = [
-    { key: 'TODAY', label: 'TODAY', sub: '16 NOV', active: true },
-    { key: 'TOMORROW', label: 'TOM', sub: '17 NOV', active: false },
-    { key: 'WED', label: 'WED', sub: '18 NOV', active: false },
-    { key: 'THU', label: 'THU', sub: '19 NOV', active: false },
+    { key: 'TODAY', label: 'TODAY', sub: '16 NOV' },
+    { key: 'TOMORROW', label: 'TOM', sub: '17 NOV' },
+    { key: 'WED', label: 'WED', sub: '18 NOV' },
+    { key: 'THU', label: 'THU', sub: '19 NOV' },
   ];
 
   const timeSlots = [
-    { time: '10:30 AM', type: 'Morning Show', format: 'IMAX 3D • Dolby Atmos', status: 'AVAILABLE', statusColor: 'text-emerald-400', badge: 'Fast Filling' },
-    { time: '02:15 PM', type: 'Matinee', format: 'IMAX 3D Laser', status: 'AVAILABLE', statusColor: 'text-emerald-400', badge: null },
-    { time: '06:45 PM', type: 'Prime Evening', format: 'IMAX Laser 4K', status: 'ALMOST_FULL', statusColor: 'text-amber-400', badge: 'Almost Full' },
-    { time: '09:30 PM', type: '⚡ Flash-Sale Prime', format: 'IMAX 3D • Dolby 7.1', status: 'FLASH_SALE', statusColor: 'text-red-400', badge: 'Rush Live 🔥', isFlash: true },
-    { time: '11:45 PM', type: 'Late Night', format: 'IMAX Laser Experience', status: 'AVAILABLE', statusColor: 'text-emerald-400', badge: null },
+    { time: '10:30 AM', format: 'IMAX 3D', badge: null },
+    { time: '02:15 PM', format: 'IMAX 3D Laser', badge: null },
+    { time: '06:45 PM', format: 'IMAX Laser 4K', badge: 'Filling Fast' },
+    { time: '09:30 PM', format: 'IMAX 3D Laser', badge: '⚡ Flash Sale', isFlash: true },
+    { time: '11:45 PM', format: 'IMAX Laser', badge: null },
   ];
 
   return (
-    <div className="bg-[#10131d] border border-[#232a3d] rounded-2xl p-5 sm:p-6 mb-8 shadow-xl">
-      {/* Date & Hall Header */}
-      <div className="flex flex-col md:flex-row items-start md:items-center justify-between pb-4 border-b border-[#212739] gap-4">
-        {/* Cinema Hall & Format */}
-        <div className="space-y-1">
-          <div className="flex items-center space-x-2 text-xs font-mono text-red-400 font-bold uppercase tracking-wider">
-            <MapPin className="w-3.5 h-3.5" />
-            <span>{show?.cinema_hall || "PVR Director's Cut - Audi 4"}</span>
-          </div>
-          <p className="text-xs text-slate-400 font-mono flex items-center space-x-2">
-            <span>Screen: <strong className="text-slate-200">{show?.screen_name || "IMAX 3D Laser"}</strong></span>
-            <span>•</span>
-            <span className="text-amber-400 font-semibold">{show?.language || "English • 3D"}</span>
-          </p>
+    <div className="bg-[#0f121d] border border-[#212739] rounded-2xl p-5 mb-8 shadow-lg">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-[#1c2233] gap-3">
+        <div className="flex items-center space-x-2">
+          <Clock className="w-4 h-4 text-red-500" />
+          <h2 className="text-sm font-bold text-white uppercase tracking-wider">
+            Select Showtime
+          </h2>
         </div>
 
         {/* Date Selector Tabs */}
-        <div className="flex items-center space-x-2 bg-[#161a27] p-1 rounded-xl border border-[#262e44]">
+        <div className="flex items-center space-x-1.5 bg-[#141825] p-1 rounded-xl border border-[#232a3d]">
           {dates.map((d) => (
             <button
               key={d.key}
               onClick={() => setSelectedDate(d.key)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-mono font-bold transition-all text-center ${
+              className={`px-3 py-1 rounded-lg text-xs font-mono font-bold transition text-center ${
                 selectedDate === d.key
-                  ? 'bg-red-600 text-white shadow-md shadow-red-950'
-                  : 'text-slate-400 hover:text-white hover:bg-[#1f2538]'
+                  ? 'bg-red-600 text-white shadow-md shadow-red-950/60'
+                  : 'text-slate-400 hover:text-white hover:bg-[#1b2133]'
               }`}
             >
-              <div className="text-[10px] uppercase">{d.label}</div>
-              <div className="text-xs font-black">{d.sub}</div>
+              <span className="text-[10px] uppercase mr-1">{d.label}</span>
+              <span className="text-[11px]">{d.sub}</span>
             </button>
           ))}
         </div>
       </div>
 
-      {/* Showtime Slot Pills */}
-      <div className="pt-4 space-y-3">
-        <div className="flex items-center justify-between">
-          <span className="text-xs font-mono font-bold text-slate-300 uppercase tracking-wider flex items-center space-x-1.5">
-            <Clock className="w-3.5 h-3.5 text-red-400" />
-            <span>Select Showtime Slot:</span>
-          </span>
-          <span className="text-[11px] font-mono text-slate-500">
-            All timings in Indian Standard Time (IST)
-          </span>
-        </div>
+      {/* Showtime Slot Buttons Grid */}
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 pt-4">
+        {timeSlots.map((slot) => {
+          const isSelected = selectedTime === slot.time;
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-          {timeSlots.map((slot) => {
-            const isSelected = selectedTime === slot.time;
-
-            return (
-              <button
-                key={slot.time}
-                onClick={() => onSelectTime(slot.time)}
-                className={`relative p-3 rounded-xl border text-left transition-all duration-200 flex flex-col justify-between space-y-1.5 ${
-                  isSelected
-                    ? 'bg-gradient-to-b from-red-600/90 to-red-800/90 border-red-400 text-white shadow-xl shadow-red-950/60 ring-2 ring-red-400'
-                    : slot.isFlash
-                    ? 'bg-[#181b29] hover:bg-[#202538] border-red-500/50 hover:border-red-400 text-slate-200 shadow-md'
-                    : 'bg-[#141825] hover:bg-[#1c2234] border-[#262f44] hover:border-slate-500 text-slate-300'
-                }`}
-              >
-                {/* Flash Badge */}
-                {slot.badge && (
-                  <span
-                    className={`absolute -top-2 right-2 text-[9px] font-mono font-bold px-1.5 py-0.5 rounded shadow-sm ${
-                      slot.isFlash
-                        ? 'bg-red-600 text-white border border-red-400 animate-pulse'
-                        : 'bg-amber-950 text-amber-300 border border-amber-600/50'
-                    }`}
-                  >
-                    {slot.badge}
-                  </span>
-                )}
-
-                <div className="flex items-center justify-between">
-                  <span className={`text-base font-black font-mono tracking-tight ${isSelected ? 'text-white' : 'text-slate-100'}`}>
-                    {slot.time}
-                  </span>
-                  {isSelected && <Check className="w-3.5 h-3.5 text-white stroke-[3]" />}
-                </div>
-
-                <div className="space-y-0.5 text-[10px] font-mono">
-                  <div className={isSelected ? 'text-red-100' : 'text-slate-400 font-semibold'}>
-                    {slot.format}
-                  </div>
-                  <div className={isSelected ? 'text-red-200' : slot.statusColor}>
-                    {slot.type}
-                  </div>
-                </div>
-              </button>
-            );
-          })}
-        </div>
+          return (
+            <button
+              key={slot.time}
+              onClick={() => onSelectTime(slot.time)}
+              className={`relative p-3 rounded-xl border text-center transition flex flex-col items-center justify-center space-y-0.5 ${
+                isSelected
+                  ? 'bg-red-600 border-red-500 text-white shadow-lg shadow-red-950/60'
+                  : slot.isFlash
+                  ? 'bg-[#151927] hover:bg-[#1d2336] border-red-500/40 text-slate-200'
+                  : 'bg-[#131622] hover:bg-[#1b2030] border-[#22293c] text-slate-300'
+              }`}
+            >
+              {slot.badge && (
+                <span
+                  className={`text-[9px] font-mono font-bold px-1.5 py-0.2 rounded mb-1 ${
+                    slot.isFlash
+                      ? 'bg-red-950 text-red-300 border border-red-800'
+                      : 'bg-amber-950 text-amber-300 border border-amber-800'
+                  }`}
+                >
+                  {slot.badge}
+                </span>
+              )}
+              <div className="text-sm font-extrabold">{slot.time}</div>
+              <div className="text-[10px] font-mono text-slate-400">{slot.format}</div>
+            </button>
+          );
+        })}
       </div>
     </div>
   );

@@ -66,6 +66,8 @@ logs/
 htmlcov/
 locust_reports/
 *.sqlite3
+*.db
+local_blob_storage/
 
 # Kubernetes / kind temp files
 kubeconfig.yaml
