@@ -16,7 +16,9 @@ export default function SeatMatrix({
   }, {});
 
   const getSeatStatusClass = (seat) => {
-    const isSelectedByMe = selectedSeats.includes(seat.seat_number);
+    const isSelectedByMe =
+      selectedSeats.includes(seat.seat_number) ||
+      (seat.status === 'LOCKED' && seat.locked_by === currentUserId);
 
     if (seat.status === 'BOOKED') {
       return 'bg-gradient-to-b from-red-900/80 to-red-950/90 border-red-800/80 text-red-300/60 cursor-not-allowed shadow-inner';
@@ -106,8 +108,11 @@ export default function SeatMatrix({
                 {/* Seat Columns 1 to 10 */}
                 <div className="flex items-center space-x-1.5 sm:space-x-2.5">
                   {rowSeats.map((seat, idx) => {
-                    const isSelected = selectedSeats.includes(seat.seat_number);
-                    const isLockedByOther = seat.status === 'LOCKED' && !isSelected;
+                    const isSelected =
+                      selectedSeats.includes(seat.seat_number) ||
+                      (seat.status === 'LOCKED' && seat.locked_by === currentUserId);
+                    const isLockedByOther =
+                      seat.status === 'LOCKED' && seat.locked_by !== currentUserId && !isSelected;
                     const isBooked = seat.status === 'BOOKED';
 
                     return (

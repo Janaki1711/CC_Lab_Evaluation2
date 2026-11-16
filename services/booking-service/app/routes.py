@@ -59,12 +59,13 @@ def get_seat_matrix(show_id: Optional[str] = None, db: Session = Depends(get_db)
 
     seats = db.query(Seat).filter(Seat.show_id == show.id).order_by(Seat.row_char, Seat.col_num).all()
     result = []
+    needs_commit = False
 
     for s in seats:
         lock_info = lock_manager.get_lock_info(str(show.id), s.seat_number)
         current_status = s.status
         ttl_rem = 0
-        locked_user = s.locked_by
+        locked_user = None
 
         if s.status == "BOOKED":
             current_status = "BOOKED"
@@ -74,6 +75,13 @@ def get_seat_matrix(show_id: Optional[str] = None, db: Session = Depends(get_db)
             locked_user = lock_info["locked_by"]
         else:
             current_status = "AVAILABLE"
+            locked_user = None
+            ttl_rem = 0
+            if s.status == "LOCKED":
+                s.status = "AVAILABLE"
+                s.locked_by = None
+                s.lock_expires_at = None
+                needs_commit = True
 
         result.append(SeatResponse(
             id=str(s.id),
@@ -88,6 +96,12 @@ def get_seat_matrix(show_id: Optional[str] = None, db: Session = Depends(get_db)
             ttl_remaining=ttl_rem,
             booked_by=s.booked_by
         ))
+
+    if needs_commit:
+        try:
+            db.commit()
+        except Exception:
+            db.rollback()
 
     return result
 

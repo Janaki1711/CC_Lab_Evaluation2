@@ -68,6 +68,11 @@ class DistributedLockManager:
         
         if self.ensure_connected():
             try:
+                # If the current user already owns the lock, refresh TTL and return True
+                current_owner = self.r.get(key)
+                if current_owner == user_id:
+                    self.r.expire(key, ttl_seconds)
+                    return True
                 # NX = set only if Not eXists; EX = expire in seconds
                 acquired = self.r.set(key, user_id, nx=True, ex=ttl_seconds)
                 return bool(acquired)
@@ -81,7 +86,10 @@ class DistributedLockManager:
             if lock_info:
                 owner, exp = lock_info
                 if exp > now:
-                    return False  # Lock held
+                    if owner == user_id:
+                        self._local_locks[key] = (user_id, now + ttl_seconds)
+                        return True
+                    return False  # Lock held by someone else
             self._local_locks[key] = (user_id, now + ttl_seconds)
             return True
 

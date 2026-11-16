@@ -97,6 +97,20 @@ export default function App() {
     try {
       const data = await bmsApi.getSeats(sId);
       setSeats(data);
+      // Reconcile user's active locks if present
+      if (currentUser?.id && Array.isArray(data)) {
+        const myLocks = data.filter(
+          (s) => s.status === 'LOCKED' && s.locked_by === currentUser.id
+        );
+        if (myLocks.length > 0) {
+          const lockNums = myLocks.map((s) => s.seat_number);
+          setSelectedSeats((prev) => Array.from(new Set([...prev, ...lockNums])));
+          const maxTtl = Math.max(...myLocks.map((s) => s.ttl_remaining || 0));
+          if (maxTtl > 0) {
+            setLockSecondsRemaining((prev) => (prev > 0 ? prev : maxTtl));
+          }
+        }
+      }
     } catch (err) {
       console.error('Failed to load seats:', err);
     }
@@ -206,7 +220,11 @@ export default function App() {
   const handleSeatClick = async (seat) => {
     if (!showData) return;
 
-    if (selectedSeats.includes(seat.seat_number)) {
+    const isOwnedByMe =
+      selectedSeats.includes(seat.seat_number) ||
+      (seat.status === 'LOCKED' && seat.locked_by === currentUser.id);
+
+    if (isOwnedByMe) {
       try {
         await bmsApi.releaseSeats(showData.id, [seat.seat_number], currentUser.id);
         const next = selectedSeats.filter((s) => s !== seat.seat_number);

@@ -69,4 +69,5 @@ class FlashSaleAudit(Base):
     outcome = Column(String(50), nullable=False)  # 'SUCCESS', 'COLLISION', 'EXPIRED'
     latency_ms = Column(Numeric(8, 2), default=0.0)
     worker_node = Column(String(100), nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
     timestamp = Column(DateTime, default=datetime.utcnow)
