@@ -7,19 +7,22 @@ export default {
   theme: {
     extend: {
       colors: {
-        brand: {
-          50: '#f0fdf4',
-          100: '#dcfce7',
-          500: '#22c55e',
-          600: '#16a34a',
-          700: '#15803d',
-        },
-        academic: {
-          navy: '#1e3a8a',
-          blue: '#2563eb',
-          slate: '#334155',
-          gold: '#d97706',
+        bms: {
+          bg: '#0a0b0e',
+          card: '#12151e',
+          elevated: '#1a1e2b',
+          border: '#2a3042',
+          red: '#e50914',
+          crimson: '#dc2626',
+          rose: '#f43f5e',
+          gold: '#f59e0b',
+          amber: '#fbbf24',
+          muted: '#94a3b8'
         }
+      },
+      fontFamily: {
+        sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+        mono: ['"JetBrains Mono"', 'monospace']
       }
     },
   },

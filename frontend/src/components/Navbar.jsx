@@ -1,127 +1,131 @@
-import React, { useState } from 'react';
-import { 
-  Shield, 
-  Layers, 
-  Info, 
-  ChevronDown, 
-  UserCheck, 
-  LogOut, 
-  Server,
-  Building2,
-  HardDrive
-} from 'lucide-react';
+import React from 'react';
+import { Film, Zap, RotateCcw, Ticket, Server, ShieldCheck, User } from 'lucide-react';
 
-export default function Navbar({ 
-  currentUser, 
-  onOpenProblemStatement, 
-  onOpenLoginModal, 
-  onLogout, 
-  activeStrategy 
+export default function Navbar({
+  currentUser,
+  setCurrentUser,
+  availableSeatsCount,
+  totalSeatsCount,
+  onOpenFlashSale,
+  onResetTheater,
+  onOpenTickets,
+  onOpenTopology,
+  userTicketsCount,
+  isResetting
 }) {
-  const [dropdownOpen, setDropdownOpen] = useState(false);
-
-  const getStrategyLabel = (strat) => {
-    if (strat === 'strategy-1-default') return 'Strategy 1: Default Baseline';
-    if (strat === 'strategy-2-affinity') return 'Strategy 2: Affinity & Anti-Affinity';
-    if (strat === 'strategy-3-autoscaling') return 'Strategy 3: HPA Scaled';
-    return 'Placement Active';
-  };
+  const demoUsers = [
+    { id: 'user_alex_101', name: 'Alex Kumar', role: 'Buyer 1' },
+    { id: 'user_sarah_202', name: 'Sarah Jenkins', role: 'Buyer 2' },
+    { id: 'user_sharma_303', name: 'Prof. Sharma', role: 'Faculty / Evaluator' },
+  ];
 
   return (
-    <header className="h-16 bg-white border-b border-slate-200/90 px-6 flex items-center justify-between select-none">
-      
-      {/* Left: Organization Context */}
-      <div className="flex items-center gap-3">
-        <div className="flex items-center gap-2 text-xs font-semibold text-slate-700">
-          <Building2 className="w-4 h-4 text-slate-400" />
-          <span>Acme Global Enterprises</span>
-          <span className="text-slate-300">/</span>
-          <span className="text-slate-900 font-bold">Production Vault Cluster</span>
-        </div>
-      </div>
+    <header className="sticky top-0 z-40 bg-[#0c0e15]/95 backdrop-blur-md border-b border-[#222838] shadow-2xl">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between h-16 sm:h-20">
+          {/* Logo & Platform Info */}
+          <div className="flex items-center space-x-3 sm:space-x-4">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-red-600 via-red-500 to-rose-700 flex items-center justify-center shadow-lg shadow-red-900/40 border border-red-400/30">
+              <Film className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+            </div>
+            <div>
+              <div className="flex items-center space-x-2">
+                <span className="text-xl sm:text-2xl font-black tracking-tight text-white">
+                  book<span className="text-red-500">my</span>show
+                </span>
+                <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-red-950/80 text-red-400 border border-red-700/50 uppercase tracking-wider">
+                  Flash Sale Rush
+                </span>
+              </div>
+              <p className="text-[11px] sm:text-xs text-slate-400 font-mono flex items-center space-x-1.5">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                <span>Distributed Lock Engine (Redis 7 + K8s Affinity)</span>
+              </p>
+            </div>
+          </div>
 
-      {/* Right Actions */}
-      <div className="flex items-center gap-3">
-        
-        {/* Research Problem Statement Button */}
-        <button
-          onClick={onOpenProblemStatement}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold shadow-2xs transition"
-        >
-          <Info className="w-4 h-4 text-indigo-600" />
-          <span>Research Problem Statement</span>
-        </button>
+          {/* Quick Metrics & User Switcher */}
+          <div className="hidden lg:flex items-center space-x-4 text-xs font-mono">
+            {/* Inventory Pill */}
+            <div className="px-3 py-1.5 rounded-lg bg-[#141724] border border-[#2a3044] text-slate-300 flex items-center space-x-2">
+              <span className="text-slate-400">Available:</span>
+              <span className="font-bold text-emerald-400 text-sm">
+                {availableSeatsCount} / {totalSeatsCount}
+              </span>
+            </div>
 
-        {/* Active Placement Strategy Pill */}
-        <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-50/80 text-indigo-800 border border-indigo-200/80 text-xs font-semibold">
-          <Layers className="w-3.5 h-3.5 text-indigo-600" />
-          <span>{getStrategyLabel(activeStrategy)}</span>
-        </div>
+            {/* Distributed Lock Pill */}
+            <div className="px-3 py-1.5 rounded-lg bg-[#141724] border border-[#2a3044] text-slate-300 flex items-center space-x-2">
+              <ShieldCheck className="w-4 h-4 text-red-500" />
+              <span className="text-slate-400">Lock Guarantee:</span>
+              <span className="font-bold text-amber-400">Zero Double-Booking</span>
+            </div>
 
-        {/* User Profile / Account Switcher */}
-        {currentUser ? (
-          <div className="relative">
+            {/* User Selector for Side-by-Side Demo */}
+            <div className="flex items-center space-x-2 bg-[#141724] p-1 rounded-lg border border-[#2a3044]">
+              <User className="w-3.5 h-3.5 text-slate-400 ml-2" />
+              <select
+                value={currentUser.id}
+                onChange={(e) => {
+                  const selected = demoUsers.find((u) => u.id === e.target.value);
+                  if (selected) setCurrentUser(selected);
+                }}
+                className="bg-transparent text-white font-sans text-xs focus:outline-none pr-2 py-1 cursor-pointer font-medium"
+              >
+                {demoUsers.map((u) => (
+                  <option key={u.id} value={u.id} className="bg-[#12151e] text-white">
+                    {u.name} ({u.role})
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {/* Action CTAs */}
+          <div className="flex items-center space-x-2 sm:space-x-3">
+            {/* Showstopper Flash Sale Rush CTA */}
             <button
-              onClick={() => setDropdownOpen(!dropdownOpen)}
-              className="flex items-center gap-2 p-1.5 pr-2.5 rounded-xl border border-slate-200 hover:border-slate-300 bg-white transition"
+              onClick={onOpenFlashSale}
+              className="relative group overflow-hidden px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl bg-gradient-to-r from-red-600 via-rose-600 to-red-700 hover:from-red-500 hover:to-rose-600 text-white font-bold text-xs sm:text-sm shadow-lg shadow-red-700/30 border border-red-400/40 transition-all transform active:scale-95 flex items-center space-x-2"
             >
-              <div className="w-7 h-7 rounded-lg bg-slate-900 text-white flex items-center justify-center font-bold text-xs uppercase">
-                {currentUser.username ? currentUser.username[0] : 'U'}
-              </div>
-              <div className="text-left hidden md:block">
-                <div className="text-xs font-bold text-slate-800 leading-tight">
-                  {currentUser.full_name || currentUser.username}
-                </div>
-                <div className="text-[10px] text-slate-400 font-mono">
-                  {currentUser.department?.split(' ')[0] || 'Enterprise'}
-                </div>
-              </div>
-              <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+              <Zap className="w-4 h-4 text-yellow-300 fill-yellow-300 animate-bounce" />
+              <span className="tracking-wide">500-User Rush</span>
             </button>
 
-            {dropdownOpen && (
-              <div className="absolute right-0 mt-2 w-64 bg-white rounded-2xl shadow-xl border border-slate-200 py-2 z-50 text-xs">
-                <div className="px-4 py-2.5 border-b border-slate-100">
-                  <div className="font-bold text-slate-900">{currentUser.full_name}</div>
-                  <div className="text-slate-400 text-[11px] font-mono">{currentUser.email}</div>
-                  <span className="inline-block mt-1.5 px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-slate-100 text-slate-700">
-                    Role: {currentUser.role}
-                  </span>
-                </div>
+            {/* Reset Theater */}
+            <button
+              onClick={onResetTheater}
+              disabled={isResetting}
+              title="Reset all seats and Redis locks"
+              className="p-2 sm:p-2.5 rounded-xl bg-[#151825] hover:bg-[#1e2336] text-slate-300 hover:text-white border border-[#2a3044] transition-all"
+            >
+              <RotateCcw className={`w-4 h-4 ${isResetting ? 'animate-spin text-red-400' : ''}`} />
+            </button>
 
-                <button
-                  onClick={() => {
-                    setDropdownOpen(false);
-                    onOpenLoginModal();
-                  }}
-                  className="w-full text-left px-4 py-2.5 text-slate-700 hover:bg-slate-50 flex items-center gap-2.5 font-medium"
-                >
-                  <UserCheck className="w-4 h-4 text-indigo-600" />
-                  Switch Enterprise Persona
-                </button>
+            {/* My Tickets */}
+            <button
+              onClick={onOpenTickets}
+              className="relative p-2 sm:p-2.5 rounded-xl bg-[#151825] hover:bg-[#1e2336] text-slate-300 hover:text-white border border-[#2a3044] transition-all"
+              title="My Booked Tickets"
+            >
+              <Ticket className="w-4 h-4 text-red-400" />
+              {userTicketsCount > 0 && (
+                <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-600 text-[10px] font-bold text-white rounded-full flex items-center justify-center">
+                  {userTicketsCount}
+                </span>
+              )}
+            </button>
 
-                <button
-                  onClick={() => {
-                    setDropdownOpen(false);
-                    onLogout();
-                  }}
-                  className="w-full text-left px-4 py-2 text-rose-600 hover:bg-rose-50 flex items-center gap-2.5 font-medium border-t border-slate-100 mt-1"
-                >
-                  <LogOut className="w-4 h-4" />
-                  Sign Out
-                </button>
-              </div>
-            )}
+            {/* K8s Topology */}
+            <button
+              onClick={onOpenTopology}
+              className="p-2 sm:p-2.5 rounded-xl bg-[#151825] hover:bg-[#1e2336] text-slate-300 hover:text-white border border-[#2a3044] transition-all hidden sm:block"
+              title="Kubernetes Placement & Affinity Topology"
+            >
+              <Server className="w-4 h-4 text-cyan-400" />
+            </button>
           </div>
-        ) : (
-          <button
-            onClick={onOpenLoginModal}
-            className="px-3.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold transition"
-          >
-            Sign In
-          </button>
-        )}
-
+        </div>
       </div>
     </header>
   );

@@ -4,22 +4,57 @@
 
 @layer base {
   body {
-    @apply bg-slate-50 text-slate-800;
+    @apply bg-[#0a0b0e] text-slate-100 antialiased;
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
   }
 }
 
-/* Custom crisp light scrollbar */
+/* Custom crisp dark scrollbar */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 7px;
+  height: 7px;
 }
 ::-webkit-scrollbar-track {
-  background: #f1f5f9;
+  background: #0f1118;
 }
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+  background: #2a3042;
   border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  background: #dc2626;
+}
+
+/* Custom animations */
+@keyframes pulseSlow {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.85;
+    transform: scale(1.02);
+  }
+}
+
+.animate-pulse-slow {
+  animation: pulseSlow 2s ease-in-out infinite;
+}
+
+@keyframes glowRed {
+  0%, 100% {
+    box-shadow: 0 0 15px rgba(229, 9, 20, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 30px rgba(229, 9, 20, 0.8);
+  }
+}
+
+.glow-red {
+  animation: glowRed 2.5s infinite;
+}
+
+.cinema-screen-glow {
+  background: linear-gradient(180deg, rgba(229, 9, 20, 0.3) 0%, rgba(229, 9, 20, 0.05) 50%, transparent 100%);
+  filter: blur(12px);
 }

@@ -1,130 +1,73 @@
 import axios from 'axios';
 
-const API_BASE = '/api';
-
 const api = axios.create({
-  baseURL: API_BASE,
-  timeout: 30000,
+  baseURL: '/api',
+  timeout: 45000,
 });
 
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
-
-// Authentication APIs
-export const authApi = {
-  login: async (username, password) => {
-    const res = await api.post('/auth/login', { username, password });
-    if (res.data.access_token) {
-      localStorage.setItem('token', res.data.access_token);
-      localStorage.setItem('user', JSON.stringify(res.data.user));
-    }
+export const bmsApi = {
+  getShow: async () => {
+    const res = await api.get('/bms/show');
     return res.data;
   },
 
-  register: async (userData) => {
-    const res = await api.post('/auth/register', userData);
-    if (res.data.access_token) {
-      localStorage.setItem('token', res.data.access_token);
-      localStorage.setItem('user', JSON.stringify(res.data.user));
-    }
+  getSeats: async () => {
+    const res = await api.get('/bms/seats');
     return res.data;
   },
 
-  getMe: async () => {
-    const res = await api.get('/auth/me');
-    return res.data;
-  },
-
-  seedDemoUsers: async () => {
-    const res = await api.post('/auth/seed-demo-users');
-    return res.data;
-  },
-
-  logout: () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-  },
-
-  getCurrentUser: () => {
-    const userStr = localStorage.getItem('user');
-    if (!userStr) return null;
-    try {
-      return JSON.parse(userStr);
-    } catch {
-      return null;
-    }
-  }
-};
-
-// Documents & Metadata APIs
-export const documentApi = {
-  list: async (params = {}) => {
-    const res = await api.get('/documents', { params });
-    return res.data;
-  },
-
-  getStats: async () => {
-    const res = await api.get('/documents/stats/overview');
-    return res.data;
-  },
-
-  getLogs: async (limit = 20) => {
-    const res = await api.get('/documents/access-logs/all', { params: { limit } });
-    return res.data;
-  },
-
-  upload: async (formData, onProgress) => {
-    const res = await api.post('/files/upload', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-      onUploadProgress: (progressEvent) => {
-        if (onProgress && progressEvent.total) {
-          const percent = Math.round((progressEvent.loaded * 100) / progressEvent.total);
-          onProgress(percent);
-        }
-      },
+  lockSeats: async (showId, seatNumbers, userId) => {
+    const res = await api.post('/bms/seats/lock', {
+      show_id: showId,
+      seat_numbers: seatNumbers,
+      user_id: userId,
     });
     return res.data;
   },
 
-  download: async (documentId, filename) => {
-    const res = await api.get(`/files/download/${documentId}`, {
-      responseType: 'blob',
+  releaseSeats: async (showId, seatNumbers, userId) => {
+    const res = await api.post('/bms/seats/release', {
+      show_id: showId,
+      seat_numbers: seatNumbers,
+      user_id: userId,
     });
-    // Trigger browser download
-    const url = window.URL.createObjectURL(new Blob([res.data]));
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', filename || 'document.pdf');
-    document.body.appendChild(link);
-    link.click();
-    link.parentNode.removeChild(link);
-    window.URL.revokeObjectURL(url);
-  },
-
-  delete: async (documentId) => {
-    const res = await api.delete(`/files/${documentId}`);
-    return res.data;
-  }
-};
-
-// Cluster & Placement Telemetry APIs
-export const clusterApi = {
-  getTopology: async () => {
-    const res = await api.get('/cluster/topology');
     return res.data;
   },
 
-  setStrategy: async (strategy) => {
-    const res = await api.post(`/cluster/strategy?strategy=${encodeURIComponent(strategy)}`);
+  confirmBooking: async (showId, seatNumbers, userId, userName) => {
+    const res = await api.post('/bms/bookings/confirm', {
+      show_id: showId,
+      seat_numbers: seatNumbers,
+      user_id: userId,
+      user_name: userName,
+    });
     return res.data;
-  }
+  },
+
+  getMyBookings: async (userId) => {
+    const res = await api.get('/bms/bookings/my-tickets', {
+      params: { user_id: userId },
+    });
+    return res.data;
+  },
+
+  launchFlashSaleRush: async (showId, concurrency = 500) => {
+    const res = await api.post('/bms/flash-sale/rush', {
+      show_id: showId,
+      concurrency: concurrency,
+    });
+    return res.data;
+  },
+
+  resetTheater: async () => {
+    const res = await api.post('/bms/reset');
+    return res.data;
+  },
+
+  getTelemetry: async () => {
+    const res = await api.get('/bms/telemetry');
+    return res.data;
+  },
 };
 
 export default api;
