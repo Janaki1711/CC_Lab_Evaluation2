@@ -1,15 +1,32 @@
+import logging
 from sqlalchemy import create_engine
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import declarative_base, sessionmaker
 from app.config import settings
 
-engine = create_engine(
-    settings.DATABASE_URL,
-    pool_size=20,
-    max_overflow=20,
-    pool_pre_ping=True,
-    pool_recycle=300
-)
+logger = logging.getLogger(__name__)
+
+db_url = settings.DATABASE_URL
+connect_args = {}
+engine_kwargs = {"pool_pre_ping": True}
+
+if db_url.startswith("sqlite"):
+    connect_args = {"check_same_thread": False}
+else:
+    engine_kwargs.update({
+        "pool_size": 20,
+        "max_overflow": 20,
+        "pool_recycle": 1800,
+        "pool_timeout": 30
+    })
+
+try:
+    engine = create_engine(db_url, connect_args=connect_args, **engine_kwargs)
+    with engine.connect() as conn:
+        logger.info(f"Connected to primary database: {db_url.split('@')[-1]}")
+except Exception as e:
+    logger.warning(f"Could not connect to primary database ({e}). Falling back to local SQLite for isolated testing.")
+    db_url = "sqlite:///./booking_local.db"
+    engine = create_engine(db_url, connect_args={"check_same_thread": False})
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()

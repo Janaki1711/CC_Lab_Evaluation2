@@ -31,6 +31,8 @@ kubectl apply -f infrastructure/kubernetes/base/postgres.yaml
 kubectl apply -f infrastructure/kubernetes/base/minio.yaml
 kubectl apply -f infrastructure/kubernetes/base/auth-service.yaml
 kubectl apply -f infrastructure/kubernetes/base/metadata-service.yaml
+kubectl apply -f infrastructure/kubernetes/base/redis.yaml
+kubectl apply -f infrastructure/kubernetes/base/booking-service.yaml
 kubectl apply -f infrastructure/kubernetes/base/api-gateway.yaml
 
 # 2. Apply Selected Strategy
@@ -58,6 +60,8 @@ if ($Strategy -eq "strategy-1-default") {
 Write-Host "`n>>> Waiting for microservices to reach Ready state..." -ForegroundColor Cyan
 kubectl rollout status deployment/auth-service -n $Namespace --timeout=120s
 kubectl rollout status deployment/metadata-service -n $Namespace --timeout=120s
+kubectl rollout status deployment/bms-redis -n $Namespace --timeout=120s
+kubectl rollout status deployment/booking-service -n $Namespace --timeout=120s
 kubectl rollout status deployment/file-service -n $Namespace --timeout=120s
 kubectl rollout status deployment/api-gateway -n $Namespace --timeout=120s
 

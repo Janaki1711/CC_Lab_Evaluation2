@@ -1,11 +1,11 @@
 import React from 'react';
-import { Sparkles, Clock, Volume2, ShieldAlert, Cpu } from 'lucide-react';
+import { Sparkles, Clock, Volume2, ShieldAlert, Cpu, Star } from 'lucide-react';
 
-export default function HeroBanner({ showData }) {
+export default function HeroBanner({ showData, selectedTime = "09:30 PM" }) {
   if (!showData) return null;
 
   return (
-    <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-[#121520] via-[#161a29] to-[#0f111a] border border-[#262c3e] shadow-2xl p-6 sm:p-8 mb-8">
+    <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-[#121520] via-[#161a29] to-[#0f111a] border border-[#262c3e] shadow-2xl p-6 sm:p-8 mb-6">
       {/* Background Red Ambient Glow */}
       <div className="absolute top-0 right-0 w-96 h-96 bg-red-600/10 rounded-full blur-3xl pointer-events-none -mr-20 -mt-20"></div>
       <div className="absolute bottom-0 left-1/3 w-64 h-64 bg-rose-600/5 rounded-full blur-2xl pointer-events-none"></div>
@@ -15,16 +15,19 @@ export default function HeroBanner({ showData }) {
         <div className="space-y-3 max-w-2xl">
           <div className="flex flex-wrap items-center gap-2">
             <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-black bg-red-600 text-white uppercase tracking-wider shadow-md shadow-red-900/50">
-              ⚡ Flash Sale Live
+              ⚡ Flash Sale Active
+            </span>
+            <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold bg-[#1c2233] text-amber-300 border border-[#2e374f]">
+              <Star className="w-3 h-3 fill-amber-400 text-amber-400 mr-1" />
+              {showData.rating || '9.1'} IMDb Rating
             </span>
             <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold bg-[#1c2233] text-slate-300 border border-[#2e374f]">
-              <Sparkles className="w-3 h-3 text-amber-400 mr-1" /> IMAX 3D Laser
+              <Sparkles className="w-3 h-3 text-cyan-400 mr-1" />
+              {showData.screen_name || "IMAX 3D Laser"}
             </span>
             <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold bg-[#1c2233] text-slate-300 border border-[#2e374f]">
-              <Volume2 className="w-3 h-3 text-cyan-400 mr-1" /> Dolby Atmos 7.1
-            </span>
-            <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold bg-[#1c2233] text-slate-300 border border-[#2e374f]">
-              <Clock className="w-3 h-3 text-rose-400 mr-1" /> 2h 8m • UA
+              <Clock className="w-3 h-3 text-rose-400 mr-1" />
+              {showData.duration || "2h 8m"} • {showData.certification || "UA"}
             </span>
           </div>
 
@@ -32,13 +35,16 @@ export default function HeroBanner({ showData }) {
             {showData.movie_title || "Deadpool & Wolverine (IMAX 3D)"}
           </h1>
 
-          <div className="text-sm sm:text-base text-slate-300 flex items-center space-x-2">
+          <div className="text-sm sm:text-base text-slate-300 flex flex-wrap items-center gap-2 font-mono">
             <span className="text-red-400 font-semibold">{showData.cinema_hall}</span>
             <span className="text-slate-500">•</span>
-            <span className="text-slate-400 font-mono">Today, 09:30 PM Show</span>
+            <span className="text-slate-400">Selected Show:</span>
+            <span className="px-2 py-0.5 rounded bg-red-950/80 border border-red-600/50 text-white font-bold">
+              {selectedTime} IST
+            </span>
           </div>
 
-          <div className="pt-2 flex flex-wrap items-center gap-4 text-xs font-mono">
+          <div className="pt-2 flex flex-wrap items-center gap-3 sm:gap-4 text-xs font-mono">
             <div className="flex items-center space-x-2 bg-[#1a1f30] px-3 py-1.5 rounded-lg border border-[#2d364f]">
               <span className="text-amber-400 font-bold">VIP Recliner:</span>
               <span className="text-white font-black text-sm">₹{showData.price_vip}</span>

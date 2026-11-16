@@ -6,21 +6,29 @@ const api = axios.create({
 });
 
 export const bmsApi = {
-  getShow: async () => {
-    const res = await api.get('/bms/show');
+  getShows: async () => {
+    const res = await api.get('/bms/shows');
     return res.data;
   },
 
-  getSeats: async () => {
-    const res = await api.get('/bms/seats');
+  getShow: async (showId = null) => {
+    const params = showId ? { show_id: showId } : {};
+    const res = await api.get('/bms/show', { params });
     return res.data;
   },
 
-  lockSeats: async (showId, seatNumbers, userId) => {
+  getSeats: async (showId = null) => {
+    const params = showId ? { show_id: showId } : {};
+    const res = await api.get('/bms/seats', { params });
+    return res.data;
+  },
+
+  lockSeats: async (showId, seatNumbers, userId, userName = 'MovieGoer') => {
     const res = await api.post('/bms/seats/lock', {
       show_id: showId,
       seat_numbers: seatNumbers,
       user_id: userId,
+      user_name: userName,
     });
     return res.data;
   },
@@ -59,8 +67,9 @@ export const bmsApi = {
     return res.data;
   },
 
-  resetTheater: async () => {
-    const res = await api.post('/bms/reset');
+  resetTheater: async (showId = null) => {
+    const params = showId ? { show_id: showId } : {};
+    const res = await api.post('/bms/reset', null, { params });
     return res.data;
   },
 

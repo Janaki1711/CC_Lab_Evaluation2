@@ -3,9 +3,9 @@ import time
 import random
 import uuid
 import logging
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 from sqlalchemy import func, or_
 from app.database import get_db, SessionLocal
@@ -20,29 +20,47 @@ from app.redis_client import lock_manager
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/bms", tags=["BookMyShow Ticket Engine"])
 
+@router.get("/shows", response_model=List[ShowResponse])
+def get_all_shows(db: Session = Depends(get_db)):
+    """Returns all active movie shows available across cinema screens"""
+    shows = db.query(Show).order_by(Show.created_at.asc()).all()
+    results = []
+    for s in shows:
+        booked_count = db.query(func.count(Seat.id)).filter(Seat.show_id == s.id, Seat.status == "BOOKED").scalar() or 0
+        s.available_seats = max(0, s.total_seats - booked_count)
+        results.append(ShowResponse.model_validate(s))
+    return results
+
 @router.get("/show", response_model=ShowResponse)
-def get_current_show(db: Session = Depends(get_db)):
-    show = db.query(Show).first()
+def get_current_show(show_id: Optional[str] = None, db: Session = Depends(get_db)):
+    """Returns a specific show by ID, or the first active show"""
+    if show_id:
+        show = db.query(Show).filter(Show.id == show_id).first()
+    else:
+        show = db.query(Show).first()
+
     if not show:
         raise HTTPException(status_code=404, detail="No active movie show configured")
     
-    # Calculate live available seats based on DB status and Redis locks
     booked_count = db.query(func.count(Seat.id)).filter(Seat.show_id == show.id, Seat.status == "BOOKED").scalar() or 0
     show.available_seats = max(0, show.total_seats - booked_count)
     return ShowResponse.model_validate(show)
 
 @router.get("/seats", response_model=List[SeatResponse])
-def get_seat_matrix(db: Session = Depends(get_db)):
-    show = db.query(Show).first()
+def get_seat_matrix(show_id: Optional[str] = None, db: Session = Depends(get_db)):
+    """Returns the 60-seat matrix for the requested show with live Redis lock states"""
+    if show_id:
+        show = db.query(Show).filter(Show.id == show_id).first()
+    else:
+        show = db.query(Show).first()
+
     if not show:
         raise HTTPException(status_code=404, detail="No active show")
 
     seats = db.query(Seat).filter(Seat.show_id == show.id).order_by(Seat.row_char, Seat.col_num).all()
-    now = time.time()
     result = []
 
     for s in seats:
-        # Check active Redis distributed lock
         lock_info = lock_manager.get_lock_info(str(show.id), s.seat_number)
         current_status = s.status
         ttl_rem = 0
@@ -93,7 +111,6 @@ def lock_seats(req: SeatLockRequest, db: Session = Depends(get_db)):
             failed_seats.append((seat_num, "ALREADY_BOOKED"))
             continue
 
-        # Atomic Distributed Lock in Redis
         acquired = lock_manager.acquire_seat_lock(
             show_id=req.show_id,
             seat_number=seat_num,
@@ -107,7 +124,6 @@ def lock_seats(req: SeatLockRequest, db: Session = Depends(get_db)):
             seat.locked_by = req.user_id
             db.commit()
             locked_successfully.append(seat_num)
-            # Log audit
             db.add(FlashSaleAudit(
                 show_id=req.show_id,
                 seat_number=seat_num,
@@ -175,12 +191,10 @@ def confirm_booking(req: BookingConfirmRequest, db: Session = Depends(get_db)):
         if seat.status == "BOOKED":
             raise HTTPException(status_code=409, detail=f"Seat {seat_num} is already booked!")
 
-        # Verify Redis lock ownership
         lock_info = lock_manager.get_lock_info(req.show_id, seat_num)
         if lock_info["locked"] and lock_info["locked_by"] != req.user_id:
             raise HTTPException(status_code=403, detail=f"Lock for {seat_num} is held by a different customer!")
 
-        # Transition to BOOKED
         seat.status = "BOOKED"
         seat.booked_by = f"{req.user_name} ({req.user_id})"
         seat.locked_by = None
@@ -188,10 +202,8 @@ def confirm_booking(req: BookingConfirmRequest, db: Session = Depends(get_db)):
         total_price += float(seat.price)
         confirmed_seats.append(seat_num)
 
-        # Release Redis lock once confirmed
         lock_manager.release_seat_lock(req.show_id, seat_num, req.user_id)
 
-    # Generate BookMyShow reference
     b_ref = f"BMS-{random.randint(100000, 999999)}"
     booking = Booking(
         booking_ref=b_ref,
@@ -206,7 +218,6 @@ def confirm_booking(req: BookingConfirmRequest, db: Session = Depends(get_db)):
     )
     db.add(booking)
     
-    # Audit log
     for s_num in confirmed_seats:
         db.add(FlashSaleAudit(
             show_id=req.show_id,
@@ -227,11 +238,11 @@ def confirm_booking(req: BookingConfirmRequest, db: Session = Depends(get_db)):
 
 @router.get("/bookings/my-tickets", response_model=List[BookingResponse])
 def get_user_bookings(user_id: str, db: Session = Depends(get_db)):
-    show = db.query(Show).first()
     bookings = db.query(Booking).filter(Booking.user_id == user_id).order_by(Booking.created_at.desc()).all()
     results = []
     for b in bookings:
         br = BookingResponse.model_validate(b)
+        show = db.query(Show).filter(Show.id == b.show_id).first()
         if show:
             br.movie_title = show.movie_title
             br.cinema_hall = show.cinema_hall
@@ -241,13 +252,14 @@ def get_user_bookings(user_id: str, db: Session = Depends(get_db)):
 @router.post("/flash-sale/rush")
 def simulate_flash_sale_rush(req: FlashSaleRushRequest, db: Session = Depends(get_db)):
     """
-    ================================================================================
-    THE SHOWSTOPPER FLASH-SALE HIGH-CONCURRENCY RUSH ENGINE
-    Simulates 500 to 1,000 concurrent bot/user requests fighting for available seats
-    in parallel threads. Proves zero double-booking via Distributed Locking!
-    ================================================================================
+    Simulates 500 to 1,000 concurrent bot requests fighting for available seats in parallel.
+    Proves zero double-booking via Distributed Locking!
     """
-    show = db.query(Show).first()
+    if req.show_id:
+        show = db.query(Show).filter(Show.id == req.show_id).first()
+    else:
+        show = db.query(Show).first()
+
     if not show:
         raise HTTPException(status_code=404, detail="No show configured")
 
@@ -280,7 +292,6 @@ def simulate_flash_sale_rush(req: FlashSaleRushRequest, db: Session = Depends(ge
         target_seat = random.choice(available_seat_numbers)
         
         t0 = time.time()
-        # Atomic lock attempt
         acquired = lock_manager.acquire_seat_lock(
             show_id=str(show.id),
             seat_number=target_seat,
@@ -292,7 +303,6 @@ def simulate_flash_sale_rush(req: FlashSaleRushRequest, db: Session = Depends(ge
 
         if acquired:
             if target_seat in granted_seats_map:
-                # Would indicate double booking!
                 double_bookings += 1
             else:
                 granted_seats_map[target_seat] = bot_user_id
@@ -302,7 +312,6 @@ def simulate_flash_sale_rush(req: FlashSaleRushRequest, db: Session = Depends(ge
             collisions_prevented += 1
             return (False, target_seat, bot_user_id, lat)
 
-    # Fire 500 concurrent workers
     with ThreadPoolExecutor(max_workers=min(concurrency, 100)) as executor:
         futures = [executor.submit(single_bot_rush, i) for i in range(concurrency)]
         for f in as_completed(futures):
@@ -312,7 +321,6 @@ def simulate_flash_sale_rush(req: FlashSaleRushRequest, db: Session = Depends(ge
     rps = concurrency / total_time
     avg_lat = sum(latencies) / len(latencies) if latencies else 0.0
 
-    # Auto-commit the granted locks as BOOKED in Postgres to show in the live theater UI
     for s_num, b_user in granted_seats_map.items():
         seat = db.query(Seat).filter(Seat.show_id == show.id, Seat.seat_number == s_num).first()
         if seat:
@@ -329,7 +337,6 @@ def simulate_flash_sale_rush(req: FlashSaleRushRequest, db: Session = Depends(ge
             ))
 
     db.commit()
-
     remaining = db.query(func.count(Seat.id)).filter(Seat.show_id == show.id, Seat.status == "AVAILABLE").scalar() or 0
 
     return {
@@ -349,24 +356,27 @@ def simulate_flash_sale_rush(req: FlashSaleRushRequest, db: Session = Depends(ge
     }
 
 @router.post("/reset")
-def reset_theater(db: Session = Depends(get_db)):
+def reset_theater(show_id: Optional[str] = None, db: Session = Depends(get_db)):
     """
-    Resets all 60 seats to AVAILABLE and clears Redis distributed locks.
-    Allows user to showcase the flash-sale rush over and over during their viva demo!
+    Resets seats to AVAILABLE and clears Redis distributed locks.
     """
-    show = db.query(Show).first()
-    if show:
-        lock_manager.clear_all_show_locks(str(show.id))
-        db.query(Seat).filter(Seat.show_id == show.id).update({
+    if show_id:
+        shows = db.query(Show).filter(Show.id == show_id).all()
+    else:
+        shows = db.query(Show).all()
+
+    for s in shows:
+        lock_manager.clear_all_show_locks(str(s.id))
+        db.query(Seat).filter(Seat.show_id == s.id).update({
             "status": "AVAILABLE",
             "locked_by": None,
             "lock_expires_at": None,
             "booked_by": None
         })
-        db.query(Booking).delete()
-        db.commit()
+        db.query(Booking).filter(Booking.show_id == s.id).delete()
 
-    return {"status": "reset", "message": "All 60 seats reset to AVAILABLE. Distributed locks cleared."}
+    db.commit()
+    return {"status": "reset", "message": "All seats reset to AVAILABLE. Distributed locks cleared."}
 
 @router.get("/telemetry")
 def get_placement_telemetry():

@@ -51,7 +51,7 @@ export default function TicketPassModal({ isOpen, onClose, ticketData }) {
           <div className="grid grid-cols-2 gap-3 p-3.5 rounded-xl bg-[#171b2b] border border-[#283147] font-mono text-xs">
             <div>
               <span className="text-slate-400 text-[10px]">DATE & SHOWTIME</span>
-              <div className="text-slate-200 font-bold mt-0.5">Today • 09:30 PM</div>
+              <div className="text-slate-200 font-bold mt-0.5">Today • {ticketData.show_time_str || "09:30 PM"}</div>
             </div>
             <div>
               <span className="text-slate-400 text-[10px]">TICKETS / SEATS</span>

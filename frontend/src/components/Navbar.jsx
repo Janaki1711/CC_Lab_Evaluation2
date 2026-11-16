@@ -1,9 +1,9 @@
 import React from 'react';
-import { Film, Zap, RotateCcw, Ticket, Server, ShieldCheck, User } from 'lucide-react';
+import { Film, Zap, RotateCcw, Ticket, Server, ShieldCheck, User, LogIn, ChevronDown } from 'lucide-react';
 
 export default function Navbar({
   currentUser,
-  setCurrentUser,
+  onOpenLogin,
   availableSeatsCount,
   totalSeatsCount,
   onOpenFlashSale,
@@ -13,12 +13,6 @@ export default function Navbar({
   userTicketsCount,
   isResetting
 }) {
-  const demoUsers = [
-    { id: 'user_alex_101', name: 'Alex Kumar', role: 'Buyer 1' },
-    { id: 'user_sarah_202', name: 'Sarah Jenkins', role: 'Buyer 2' },
-    { id: 'user_sharma_303', name: 'Prof. Sharma', role: 'Faculty / Evaluator' },
-  ];
-
   return (
     <header className="sticky top-0 z-40 bg-[#0c0e15]/95 backdrop-blur-md border-b border-[#222838] shadow-2xl">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -44,7 +38,7 @@ export default function Navbar({
             </div>
           </div>
 
-          {/* Quick Metrics & User Switcher */}
+          {/* Quick Metrics & User Account Capsule */}
           <div className="hidden lg:flex items-center space-x-4 text-xs font-mono">
             {/* Inventory Pill */}
             <div className="px-3 py-1.5 rounded-lg bg-[#141724] border border-[#2a3044] text-slate-300 flex items-center space-x-2">
@@ -61,24 +55,25 @@ export default function Navbar({
               <span className="font-bold text-amber-400">Zero Double-Booking</span>
             </div>
 
-            {/* User Selector for Side-by-Side Demo */}
-            <div className="flex items-center space-x-2 bg-[#141724] p-1 rounded-lg border border-[#2a3044]">
-              <User className="w-3.5 h-3.5 text-slate-400 ml-2" />
-              <select
-                value={currentUser.id}
-                onChange={(e) => {
-                  const selected = demoUsers.find((u) => u.id === e.target.value);
-                  if (selected) setCurrentUser(selected);
-                }}
-                className="bg-transparent text-white font-sans text-xs focus:outline-none pr-2 py-1 cursor-pointer font-medium"
-              >
-                {demoUsers.map((u) => (
-                  <option key={u.id} value={u.id} className="bg-[#12151e] text-white">
-                    {u.name} ({u.role})
-                  </option>
-                ))}
-              </select>
-            </div>
+            {/* User Account / Profile Button */}
+            <button
+              onClick={onOpenLogin}
+              className="flex items-center space-x-2 bg-[#141724] hover:bg-[#1b2032] px-3 py-1.5 rounded-lg border border-[#2a3044] hover:border-red-500/50 transition-all text-left"
+              title="Click to switch account or sign in"
+            >
+              <div className="w-6 h-6 rounded-full bg-red-600/30 border border-red-500/50 flex items-center justify-center text-red-400 font-bold text-xs">
+                {currentUser?.name ? currentUser.name[0] : 'U'}
+              </div>
+              <div className="space-y-0.5">
+                <div className="text-xs font-bold text-white leading-tight flex items-center space-x-1">
+                  <span>{currentUser?.name || 'Sign In'}</span>
+                  <ChevronDown className="w-3 h-3 text-slate-400" />
+                </div>
+                <div className="text-[10px] text-amber-400/90 leading-none">
+                  {currentUser?.role || 'Guest'}
+                </div>
+              </div>
+            </button>
           </div>
 
           {/* Action CTAs */}

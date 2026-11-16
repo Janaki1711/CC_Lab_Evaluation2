@@ -1,6 +1,12 @@
 import time
 import logging
-import redis
+import threading
+
+try:
+    import redis
+except ImportError:
+    redis = None
+
 from app.config import settings
 
 logger = logging.getLogger(__name__)
@@ -17,10 +23,16 @@ end
 class DistributedLockManager:
     def __init__(self):
         self.r = None
-        self._local_locks = {} # in-memory fallback lock dictionary
+        self._local_locks = {}  # in-memory fallback lock dictionary
+        self._lock = threading.Lock()  # thread-safety for concurrent fallback rush
         self._connect()
 
     def _connect(self):
+        if redis is None:
+            logger.warning("Redis Python package not installed. Running in synchronized in-memory fallback mode.")
+            self.r = None
+            return
+
         try:
             self.r = redis.Redis(
                 host=settings.REDIS_HOST,
@@ -36,6 +48,8 @@ class DistributedLockManager:
             self.r = None
 
     def ensure_connected(self) -> bool:
+        if redis is None:
+            return False
         if self.r is not None:
             try:
                 self.r.ping()
@@ -51,7 +65,6 @@ class DistributedLockManager:
         Guarantees ZERO double-booking even if 10,000 requests hit simultaneously!
         """
         key = f"seat_lock:{show_id}:{seat_number}"
-        t0 = time.time()
         
         if self.ensure_connected():
             try:
@@ -61,15 +74,16 @@ class DistributedLockManager:
             except Exception as e:
                 logger.error(f"Redis lock acquisition error for {key}: {e}")
 
-        # In-memory synchronized fallback if Redis container is rebooting
-        now = time.time()
-        lock_info = self._local_locks.get(key)
-        if lock_info:
-            owner, exp = lock_info
-            if exp > now:
-                return False # Lock held
-        self._local_locks[key] = (user_id, now + ttl_seconds)
-        return True
+        # Thread-safe in-memory synchronized fallback
+        with self._lock:
+            now = time.time()
+            lock_info = self._local_locks.get(key)
+            if lock_info:
+                owner, exp = lock_info
+                if exp > now:
+                    return False  # Lock held
+            self._local_locks[key] = (user_id, now + ttl_seconds)
+            return True
 
     def release_seat_lock(self, show_id: str, seat_number: str, user_id: str) -> bool:
         key = f"seat_lock:{show_id}:{seat_number}"
@@ -80,12 +94,13 @@ class DistributedLockManager:
             except Exception as e:
                 logger.error(f"Redis safe release error for {key}: {e}")
 
-        if key in self._local_locks:
-            owner, exp = self._local_locks[key]
-            if owner == user_id:
-                del self._local_locks[key]
-                return True
-        return False
+        with self._lock:
+            if key in self._local_locks:
+                owner, exp = self._local_locks[key]
+                if owner == user_id:
+                    del self._local_locks[key]
+                    return True
+            return False
 
     def get_lock_info(self, show_id: str, seat_number: str):
         key = f"seat_lock:{show_id}:{seat_number}"
@@ -97,15 +112,16 @@ class DistributedLockManager:
                     return {"locked": True, "locked_by": owner, "ttl_remaining": ttl}
             except Exception:
                 pass
-        
-        if key in self._local_locks:
-            owner, exp = self._local_locks[key]
-            rem = int(exp - time.time())
-            if rem > 0:
-                return {"locked": True, "locked_by": owner, "ttl_remaining": rem}
-            else:
-                del self._local_locks[key]
-        return {"locked": False, "locked_by": None, "ttl_remaining": 0}
+
+        with self._lock:
+            if key in self._local_locks:
+                owner, exp = self._local_locks[key]
+                rem = int(exp - time.time())
+                if rem > 0:
+                    return {"locked": True, "locked_by": owner, "ttl_remaining": rem}
+                else:
+                    del self._local_locks[key]
+            return {"locked": False, "locked_by": None, "ttl_remaining": 0}
 
     def clear_all_show_locks(self, show_id: str):
         """Used when resetting theater for a clean evaluation demo"""
@@ -117,6 +133,11 @@ class DistributedLockManager:
                     self.r.delete(*keys)
             except Exception as e:
                 logger.warning(f"Error clearing locks: {e}")
-        self._local_locks.clear()
+
+        with self._lock:
+            prefix = f"seat_lock:{show_id}:"
+            to_del = [k for k in self._local_locks if k.startswith(prefix)]
+            for k in to_del:
+                del self._local_locks[k]
 
 lock_manager = DistributedLockManager()

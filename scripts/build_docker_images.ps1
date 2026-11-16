@@ -21,6 +21,7 @@ $images = @(
     @{ Name = "auth-service:latest";     Context = "services/auth-service";     Dockerfile = "services/auth-service/Dockerfile" },
     @{ Name = "file-service:latest";     Context = "services/file-service";     Dockerfile = "services/file-service/Dockerfile" },
     @{ Name = "metadata-service:latest"; Context = "services/metadata-service"; Dockerfile = "services/metadata-service/Dockerfile" },
+    @{ Name = "booking-service:latest";  Context = "services/booking-service";  Dockerfile = "services/booking-service/Dockerfile" },
     @{ Name = "api-gateway:latest";      Context = "services/api-gateway";      Dockerfile = "services/api-gateway/Dockerfile" },
     @{ Name = "frontend:latest";         Context = "frontend";                  Dockerfile = "frontend/Dockerfile" }
 )

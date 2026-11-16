@@ -7,6 +7,10 @@ export default defineConfig({
     port: 3000,
     host: true,
     proxy: {
+      '/api/bms': {
+        target: 'http://localhost:8004',
+        changeOrigin: true
+      },
       '/api': {
         target: 'http://localhost:80',
         changeOrigin: true
