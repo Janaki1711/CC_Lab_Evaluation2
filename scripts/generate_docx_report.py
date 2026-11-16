@@ -56,15 +56,16 @@ def create_report(output_path):
     r_sub.font.color.rgb = COLOR_SECONDARY
 
     # Metadata Box
-    meta_table = doc.add_table(rows=6, cols=2)
+    meta_table = doc.add_table(rows=7, cols=2)
     meta_table.alignment = WD_TABLE_ALIGNMENT.CENTER
     meta_data = [
-        ("Course / Evaluation:", "Cloud Computing Lab Evaluation 2 - High Concurrency & Placement"),
-        ("Problem Statement:", "High-Concurrency Flash-Sale / Ticket Booking Engine (BookMyShow / Ticketmaster)"),
-        ("Key Innovation:", "Atomic Distributed Locking (Redis SET NX EX) + Zero Double-Booking Guarantee"),
-        ("Kubernetes Strategy:", "Pod Affinity (Redis Co-location <4ms) + Pod Anti-Affinity (Traffic Spread)"),
-        ("Movie Catalog:", "4 Blockbusters (Deadpool & Wolverine, Oppenheimer, Interstellar, Avatar 2)"),
-        ("Deployment Target:", "4-Node Multi-Node Kind Cluster (1 Control-Plane + 3 Worker Nodes)")
+        ("Course / Institution:", "KLE Technological University — Cloud Computing Lab Evaluation 2"),
+        ("Syllabus Problem:", "Problem 09: Pod Affinity and Anti-Affinity for Application Placement (also covers Problem 08: Workload Distribution)"),
+        ("Implementation Engine:", "High-Concurrency Flash-Sale / Ticket Booking Engine (BookMyShow)"),
+        ("Key Innovation:", "Atomic Distributed Locking (Redis SET NX EX) + Strict Zero Double-Booking Guarantee"),
+        ("Kubernetes Placement:", "Pod Affinity (bms-redis co-location <3.8ms) + Pod Anti-Affinity (1 replica per worker node)"),
+        ("Topology Domain:", "kubernetes.io/hostname (4-Node Kind Cluster: 1 Control-Plane + 3 Worker Nodes)"),
+        ("Demonstration Focus:", "Pod placement verification, rule satisfaction, replica distribution, node failure survival, and 500-user rush")
     ]
     for i, (k, v) in enumerate(meta_data):
         row = meta_table.rows[i]
